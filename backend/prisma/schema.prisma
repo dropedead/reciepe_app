@@ -1,0 +1,285 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// Multi-Tenancy Models
+// ============================================
+
+model Organization {
+  id          Int      @id @default(autoincrement())
+  name        String
+  slug        String   @unique
+  description String?
+  logoUrl     String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  members          OrganizationMember[]
+  invitations      Invitation[]
+  categories       Category[]
+  ingredients      Ingredient[]
+  recipes          Recipe[]
+  menus            Menu[]
+  menuCategories   MenuCategory[]
+  recipeCategories RecipeCategory[]
+  units            Unit[]
+}
+
+model OrganizationMember {
+  id             Int      @id @default(autoincrement())
+  userId         Int
+  organizationId Int
+  role           String   @default("MEMBER") // OWNER, ADMIN, MEMBER
+  isDefault      Boolean  @default(false) // User's default organization
+  joinedAt       DateTime @default(now())
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, organizationId])
+  @@index([userId])
+  @@index([organizationId])
+}
+
+// ============================================
+// Core Business Models (Tenant-Scoped)
+// ============================================
+
+model Category {
+  id             Int          @id @default(autoincrement())
+  name           String
+  description    String?
+  organizationId Int
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  Ingredient   Ingredient[]
+
+  @@unique([organizationId, name])
+  @@index([organizationId])
+}
+
+model Ingredient {
+  id               Int      @id @default(autoincrement())
+  name             String
+  purchaseUnit     String   @default("kg")
+  purchasePrice    Float    @default(0)
+  packageSize      Float    @default(1)
+  yieldPercentage  Float    @default(100)
+  usageUnit        String   @default("gram")
+  conversionRate   Float    @default(1000)
+  unit             String   @default("gram")
+  pricePerUnit     Float    @default(0)
+  categoryId       Int?
+  organizationId   Int
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  organization     Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  Category         Category?          @relation(fields: [categoryId], references: [id])
+  PriceHistory     PriceHistory[]
+  RecipeIngredient RecipeIngredient[]
+
+  @@index([organizationId])
+  @@index([categoryId])
+}
+
+model Menu {
+  id             Int      @id @default(autoincrement())
+  name           String
+  description    String?
+  imageUrl       String?
+  sellingPrice   Float
+  isActive       Boolean  @default(true)
+  categoryId     Int?
+  organizationId Int
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  MenuCategory MenuCategory? @relation(fields: [categoryId], references: [id])
+  MenuRecipe   MenuRecipe[]
+
+  @@index([organizationId])
+  @@index([categoryId])
+}
+
+model MenuCategory {
+  id             Int      @id @default(autoincrement())
+  name           String
+  description    String?
+  organizationId Int
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  Menu         Menu[]
+
+  @@unique([organizationId, name])
+  @@index([organizationId])
+}
+
+model MenuRecipe {
+  id       Int @id @default(autoincrement())
+  menuId   Int
+  recipeId Int
+  quantity Int @default(1)
+
+  Menu   Menu   @relation(fields: [menuId], references: [id], onDelete: Cascade)
+  Recipe Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+
+  @@unique([menuId, recipeId])
+}
+
+model PriceHistory {
+  id            Int      @id @default(autoincrement())
+  ingredientId  Int
+  purchasePrice Float
+  purchaseUnit  String
+  supplier      String?
+  notes         String?
+  recordedAt    DateTime @default(now())
+  createdAt     DateTime @default(now())
+
+  Ingredient Ingredient @relation(fields: [ingredientId], references: [id], onDelete: Cascade)
+
+  @@index([ingredientId, recordedAt])
+}
+
+model Recipe {
+  id             Int      @id @default(autoincrement())
+  name           String
+  description    String?
+  servings       Int      @default(1)
+  imageUrl       String?
+  videoUrl       String?
+  sop            String?
+  categoryId     Int?
+  organizationId Int
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization                                         Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  MenuRecipe                                           MenuRecipe[]
+  RecipeCategory                                       RecipeCategory?    @relation(fields: [categoryId], references: [id])
+  RecipeComponent_RecipeComponent_parentRecipeIdToRecipe RecipeComponent[]  @relation("RecipeComponent_parentRecipeIdToRecipe")
+  RecipeComponent_RecipeComponent_subRecipeIdToRecipe    RecipeComponent[]  @relation("RecipeComponent_subRecipeIdToRecipe")
+  RecipeIngredient                                     RecipeIngredient[]
+
+  @@index([organizationId])
+  @@index([categoryId])
+}
+
+model RecipeCategory {
+  id             Int      @id @default(autoincrement())
+  name           String
+  description    String?
+  organizationId Int
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  Recipe       Recipe[]
+
+  @@unique([organizationId, name])
+  @@index([organizationId])
+}
+
+model RecipeComponent {
+  id             Int   @id @default(autoincrement())
+  parentRecipeId Int
+  subRecipeId    Int
+  quantity       Float @default(1)
+
+  Recipe_RecipeComponent_parentRecipeIdToRecipe Recipe @relation("RecipeComponent_parentRecipeIdToRecipe", fields: [parentRecipeId], references: [id], onDelete: Cascade)
+  Recipe_RecipeComponent_subRecipeIdToRecipe    Recipe @relation("RecipeComponent_subRecipeIdToRecipe", fields: [subRecipeId], references: [id], onDelete: Cascade)
+
+  @@unique([parentRecipeId, subRecipeId])
+}
+
+model RecipeIngredient {
+  id           Int   @id @default(autoincrement())
+  recipeId     Int
+  ingredientId Int
+  quantity     Float
+
+  Ingredient Ingredient @relation(fields: [ingredientId], references: [id], onDelete: Restrict)
+  Recipe     Recipe     @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+
+  @@unique([recipeId, ingredientId])
+}
+
+model Unit {
+  id             Int      @id @default(autoincrement())
+  name           String
+  label          String
+  group          String
+  baseValue      Float    @default(1)
+  isBaseUnit     Boolean  @default(false)
+  isPurchaseUnit Boolean  @default(true)
+  isUsageUnit    Boolean  @default(true)
+  description    String?
+  organizationId Int
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, name])
+  @@index([organizationId])
+  @@index([group])
+}
+
+// ============================================
+// User Model (Global - Not Tenant-Scoped)
+// ============================================
+
+model User {
+  id           Int       @id @default(autoincrement())
+  email        String    @unique
+  password     String
+  name         String
+  avatar       String?   @db.Text // Profile photo (base64 or URL)
+  role         String    @default("MEMBER") // Global role (for system admin purposes)
+  isVerified   Boolean   @default(false)
+  verifyToken  String?
+  resetToken   String?
+  resetExpires DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  organizations    OrganizationMember[]
+  sentInvitations  Invitation[]
+}
+
+// ============================================
+// Invitation Model (For Collaboration)
+// ============================================
+
+model Invitation {
+  id             Int      @id @default(autoincrement())
+  email          String
+  organizationId Int
+  role           String   @default("MEMBER") // ADMIN, MEMBER
+  status         String   @default("PENDING") // PENDING, ACCEPTED, DECLINED, EXPIRED
+  invitedBy      Int
+  token          String   @unique
+  expiresAt      DateTime
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  inviter      User         @relation(fields: [invitedBy], references: [id])
+
+  @@index([email])
+  @@index([organizationId])
+  @@index([token])
+}

@@ -1,0 +1,130 @@
+# ============================================
+# Environment Files
+# ============================================
+.env
+.env.local
+.env.development
+.env.development.local
+.env.test
+.env.test.local
+.env.production
+.env.production.local
+*.env
+
+# ============================================
+# Database Files
+# ============================================
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+backend/prisma/dev.db
+backend/prisma/dev.db-journal
+backend/prisma/*.db
+backend/prisma/*.db-journal
+
+# ============================================
+# Dependencies
+# ============================================
+node_modules/
+.pnp
+.pnp.js
+
+# ============================================
+# Build Output
+# ============================================
+dist/
+build/
+out/
+.next/
+.nuxt/
+.output/
+
+# ============================================
+# Logs
+# ============================================
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# ============================================
+# OS Generated Files
+# ============================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# ============================================
+# IDE / Editor
+# ============================================
+.idea/
+.vscode/
+*.swp
+*.swo
+*.swn
+*~
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+*.sublime-project
+
+# ============================================
+# Testing
+# ============================================
+coverage/
+.nyc_output/
+*.lcov
+
+# ============================================
+# Temporary Files
+# ============================================
+tmp/
+temp/
+.tmp/
+.temp/
+*.tmp
+*.temp
+*.bak
+*.backup
+
+# ============================================
+# Package Manager Lock Files (optional - uncomment if needed)
+# ============================================
+# package-lock.json
+# yarn.lock
+# pnpm-lock.yaml
+
+# ============================================
+# TypeScript Cache
+# ============================================
+*.tsbuildinfo
+
+# ============================================
+# Prisma
+# ============================================
+# Uncomment if you don't want to track migrations
+# backend/prisma/migrations/
+
+# ============================================
+# Uploaded Files (if applicable)
+# ============================================
+uploads/
+public/uploads/
+
+# ============================================
+# Debug
+# ============================================
+.eslintcache
+.stylelintcache
