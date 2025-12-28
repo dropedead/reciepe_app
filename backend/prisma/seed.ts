@@ -8,6 +8,8 @@ async function main() {
 
     // Clean existing data (in reverse order of dependencies)
     console.log('🧹 Cleaning existing data...');
+    await prisma.menuBundleItem.deleteMany();
+    await prisma.menuBundle.deleteMany();
     await prisma.recipeComponent.deleteMany();
     await prisma.recipeIngredient.deleteMany();
     await prisma.menuRecipe.deleteMany();
@@ -834,7 +836,133 @@ async function main() {
     });
 
     // ============================================
-    // 10. Create Price History
+    // 10. Create Menu Bundles (Promo Packages)
+    // ============================================
+    console.log('🎁 Creating menu bundles...');
+
+    // Get menus for bundling
+    const allMenus = await prisma.menu.findMany({
+        where: { organizationId: organization.id }
+    });
+
+    const menuAyamGoreng = allMenus.find(m => m.name === 'Ayam Goreng Kremes');
+    const menuTempeGoreng = allMenus.find(m => m.name === 'Tempe Goreng');
+    const menuTumisKangkung = allMenus.find(m => m.name === 'Tumis Kangkung');
+    const menuNasiPutih = allMenus.find(m => m.name === 'Nasi Putih');
+    const menuTelurDadar = allMenus.find(m => m.name === 'Telur Dadar');
+    const menuSambal = allMenus.find(m => m.name === 'Sambal Terasi');
+
+    // Bundle 1: Buy 1 Get 1 Ayam Goreng
+    if (menuAyamGoreng && menuNasiPutih) {
+        await prisma.menuBundle.create({
+            data: {
+                name: 'Promo BOGO Ayam Goreng',
+                description: 'Beli 1 Ayam Goreng GRATIS 1 Nasi Putih!',
+                promotionType: 'BUY1GET1',
+                isActive: true,
+                validFrom: new Date(),
+                validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
+                organizationId: organization.id,
+                items: {
+                    create: [
+                        { menuId: menuAyamGoreng.id, quantity: 1, isFree: false },
+                        { menuId: menuNasiPutih.id, quantity: 1, isFree: true }
+                    ]
+                }
+            }
+        });
+    }
+
+    // Bundle 2: Diskon 20% Paket Makan Siang
+    if (menuAyamGoreng && menuNasiPutih && menuTumisKangkung && menuSambal) {
+        await prisma.menuBundle.create({
+            data: {
+                name: 'Paket Makan Siang Hemat',
+                description: 'Ayam + Nasi + Sayur + Sambal dengan diskon 20%',
+                promotionType: 'PERCENTAGE',
+                discountValue: 20,
+                isActive: true,
+                validFrom: new Date(),
+                validUntil: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000), // 60 days
+                organizationId: organization.id,
+                items: {
+                    create: [
+                        { menuId: menuAyamGoreng.id, quantity: 1, isFree: false },
+                        { menuId: menuNasiPutih.id, quantity: 1, isFree: false },
+                        { menuId: menuTumisKangkung.id, quantity: 1, isFree: false },
+                        { menuId: menuSambal.id, quantity: 1, isFree: false }
+                    ]
+                }
+            }
+        });
+    }
+
+    // Bundle 3: Harga Tetap Paket Keluarga
+    if (menuAyamGoreng && menuNasiPutih && menuTempeGoreng && menuTumisKangkung) {
+        await prisma.menuBundle.create({
+            data: {
+                name: 'Paket Keluarga',
+                description: '2 Ayam + 4 Nasi + 2 Tempe + 2 Sayur hanya Rp 50.000',
+                promotionType: 'FIXED_PRICE',
+                bundlePrice: 50000,
+                isActive: true,
+                organizationId: organization.id,
+                items: {
+                    create: [
+                        { menuId: menuAyamGoreng.id, quantity: 2, isFree: false },
+                        { menuId: menuNasiPutih.id, quantity: 4, isFree: false },
+                        { menuId: menuTempeGoreng.id, quantity: 2, isFree: false },
+                        { menuId: menuTumisKangkung.id, quantity: 2, isFree: false }
+                    ]
+                }
+            }
+        });
+    }
+
+    // Bundle 4: Diskon Nominal Rp 5000
+    if (menuTempeGoreng && menuTelurDadar && menuNasiPutih) {
+        await prisma.menuBundle.create({
+            data: {
+                name: 'Paket Vegetarian',
+                description: 'Tempe + Telur + Nasi - Hemat Rp 5.000',
+                promotionType: 'DISCOUNT',
+                discountValue: 5000,
+                isActive: true,
+                organizationId: organization.id,
+                items: {
+                    create: [
+                        { menuId: menuTempeGoreng.id, quantity: 1, isFree: false },
+                        { menuId: menuTelurDadar.id, quantity: 1, isFree: false },
+                        { menuId: menuNasiPutih.id, quantity: 1, isFree: false }
+                    ]
+                }
+            }
+        });
+    }
+
+    // Bundle 5: Buy 2 Get 1 (Expired Bundle)
+    if (menuTempeGoreng && menuTelurDadar) {
+        await prisma.menuBundle.create({
+            data: {
+                name: 'Promo Beli 2 Gratis 1',
+                description: 'Beli 2 Tempe Goreng gratis 1 Telur Dadar!',
+                promotionType: 'BUY2GET1',
+                isActive: true,
+                validFrom: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000), // 60 days ago
+                validUntil: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // 30 days ago (expired)
+                organizationId: organization.id,
+                items: {
+                    create: [
+                        { menuId: menuTempeGoreng.id, quantity: 2, isFree: false },
+                        { menuId: menuTelurDadar.id, quantity: 1, isFree: true }
+                    ]
+                }
+            }
+        });
+    }
+
+    // ============================================
+    // 11. Create Price History
     // ============================================
     console.log('📊 Creating price history...');
     const now = new Date();

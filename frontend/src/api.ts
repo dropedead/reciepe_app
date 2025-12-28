@@ -44,6 +44,16 @@ export const authApi = {
         api.post('/auth/change-password', { currentPassword, newPassword }),
     updateProfile: (data: { name?: string; email?: string; avatar?: string }): Promise<AxiosResponse> =>
         api.put('/auth/profile', data),
+    // Google OAuth
+    googleLogin: (credential: string): Promise<AxiosResponse> =>
+        api.post('/auth/google', { credential }),
+    // Onboarding
+    getOnboardingStatus: (): Promise<AxiosResponse> =>
+        api.get('/auth/onboarding-status'),
+    setupOrganization: (data: { name: string; description?: string }): Promise<AxiosResponse> =>
+        api.post('/auth/setup-organization', data),
+    completeOnboarding: (): Promise<AxiosResponse> =>
+        api.post('/auth/complete-onboarding'),
 };
 
 // Organizations API
@@ -179,4 +189,15 @@ export const menuCategoriesApi = {
     delete: (id: number): Promise<AxiosResponse> => api.delete(`/menu-categories/${id}`)
 };
 
+// Bundling API (Paket Promosi)
+export const bundlingApi = {
+    getAll: (): Promise<AxiosResponse> => api.get('/bundling'),
+    getById: (id: number): Promise<AxiosResponse> => api.get(`/bundling/${id}`),
+    create: (data: any): Promise<AxiosResponse> => api.post('/bundling', data),
+    update: (id: number, data: any): Promise<AxiosResponse> => api.put(`/bundling/${id}`, data),
+    delete: (id: number): Promise<AxiosResponse> => api.delete(`/bundling/${id}`),
+    calculate: (data: any): Promise<AxiosResponse> => api.post('/bundling/calculate', data)
+};
+
 export default api;
+

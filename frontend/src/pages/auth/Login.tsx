@@ -1,7 +1,10 @@
-import { useState, FormEvent } from 'react';
+import { useState, FormEvent, useEffect, useCallback } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { Mail, Lock, Eye, EyeOff, AlertCircle, Loader2 } from 'lucide-react';
+import '../../types/google.d.ts';
+
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -9,12 +12,67 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [googleLoaded, setGoogleLoaded] = useState(false);
   
-  const { login } = useAuth();
+  const { login, googleLogin } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   
   const from = (location.state as any)?.from?.pathname || '/';
+
+  // Google Sign-In callback
+  const handleGoogleCallback = useCallback(async (response: { credential: string }) => {
+    setError('');
+    setIsLoading(true);
+    try {
+      await googleLogin(response.credential);
+      navigate(from, { replace: true });
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Login dengan Google gagal');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [googleLogin, navigate, from]);
+
+  // Load Google Identity Services script
+  useEffect(() => {
+    if (!GOOGLE_CLIENT_ID) return;
+    
+    const script = document.createElement('script');
+    script.src = 'https://accounts.google.com/gsi/client';
+    script.async = true;
+    script.defer = true;
+    script.onload = () => setGoogleLoaded(true);
+    document.head.appendChild(script);
+
+    return () => {
+      const existingScript = document.querySelector('script[src="https://accounts.google.com/gsi/client"]');
+      if (existingScript) {
+        document.head.removeChild(existingScript);
+      }
+    };
+  }, []);
+
+  // Initialize Google Sign-In button
+  useEffect(() => {
+    if (!googleLoaded || !window.google || !GOOGLE_CLIENT_ID) return;
+
+    window.google.accounts.id.initialize({
+      client_id: GOOGLE_CLIENT_ID,
+      callback: handleGoogleCallback,
+    });
+
+    const buttonContainer = document.getElementById('google-signin-btn');
+    if (buttonContainer) {
+      window.google.accounts.id.renderButton(buttonContainer, {
+        theme: 'outline',
+        size: 'large',
+        width: 360,
+        text: 'continue_with',
+        shape: 'rectangular',
+      });
+    }
+  }, [googleLoaded, handleGoogleCallback]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -135,6 +193,23 @@ const Login = () => {
               )}
             </button>
           </form>
+
+          {/* Divider */}
+          {GOOGLE_CLIENT_ID && (
+            <>
+              <div className="relative my-6">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-gray-200 dark:border-dark-700"></div>
+                </div>
+                <div className="relative flex justify-center text-sm">
+                  <span className="px-4 bg-white dark:bg-dark-800 text-gray-500 dark:text-dark-400">atau</span>
+                </div>
+              </div>
+
+              {/* Google Sign-In Button */}
+              <div id="google-signin-btn" className="w-full flex justify-center"></div>
+            </>
+          )}
 
           {/* Footer */}
           <div className="mt-8 pt-6 border-t border-gray-200 dark:border-dark-700 text-center">

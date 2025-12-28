@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { 
   User, Mail, Crown, Shield, Users, Plus, X, Send, Trash2, Clock, 
-  RefreshCw, AlertCircle, Loader2 
+  RefreshCw, AlertCircle, Loader2, Check, ChevronDown
 } from 'lucide-react';
 import { useOrganization } from '../contexts/OrganizationContext';
 import { organizationsApi, invitationsApi } from '../api';
@@ -43,6 +43,7 @@ const TeamManagement = () => {
   const [inviteRole, setInviteRole] = useState('MEMBER');
   const [isInviting, setIsInviting] = useState(false);
   const [inviteError, setInviteError] = useState<string | null>(null);
+  const [showRolePicker, setShowRolePicker] = useState(false);
 
   const loadData = useCallback(async () => {
     if (!currentOrganization) return;
@@ -369,21 +370,68 @@ const TeamManagement = () => {
                 </div>
                 
                 <div>
-                  <label htmlFor="invite-role" className="block text-sm font-medium text-gray-700 dark:text-dark-300 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-dark-300 mb-2">
                     Role
                   </label>
-                  <select
-                    id="invite-role"
-                    value={inviteRole}
-                    onChange={(e) => setInviteRole(e.target.value)}
-                    className="input"
-                  >
-                    <option value="MEMBER">Member</option>
-                    <option value="ADMIN">Admin</option>
-                  </select>
-                  <p className="text-xs text-gray-500 dark:text-dark-500 mt-2">
-                    Admin dapat mengundang dan mengelola anggota lain
-                  </p>
+                  
+                  {/* Role Picker Cards */}
+                  <div className="space-y-3">
+                    {/* Member Option */}
+                    <button
+                      type="button"
+                      onClick={() => setInviteRole('MEMBER')}
+                      className={`w-full p-4 rounded-xl border-2 text-left transition-all ${
+                        inviteRole === 'MEMBER' 
+                          ? 'border-primary-500 bg-primary-50 dark:bg-primary-500/10' 
+                          : 'border-gray-200 dark:border-dark-600 hover:border-gray-300 dark:hover:border-dark-500 hover:bg-gray-50 dark:hover:bg-dark-700/50'
+                      }`}
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                          inviteRole === 'MEMBER' ? 'bg-primary-100 dark:bg-primary-500/20' : 'bg-gray-100 dark:bg-dark-700'
+                        }`}>
+                          <User size={20} className={inviteRole === 'MEMBER' ? 'text-primary-600 dark:text-primary-400' : 'text-gray-500 dark:text-dark-400'} />
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold text-gray-900 dark:text-white">Member</span>
+                            {inviteRole === 'MEMBER' && <Check size={16} className="text-primary-500" />}
+                          </div>
+                          <p className="text-sm text-gray-500 dark:text-dark-400 mt-1">
+                            Dapat melihat dan mengedit resep, menu, dan bahan. Tidak dapat mengelola anggota tim.
+                          </p>
+                        </div>
+                      </div>
+                    </button>
+
+                    {/* Admin Option */}
+                    <button
+                      type="button"
+                      onClick={() => setInviteRole('ADMIN')}
+                      className={`w-full p-4 rounded-xl border-2 text-left transition-all ${
+                        inviteRole === 'ADMIN' 
+                          ? 'border-blue-500 bg-blue-50 dark:bg-blue-500/10' 
+                          : 'border-gray-200 dark:border-dark-600 hover:border-gray-300 dark:hover:border-dark-500 hover:bg-gray-50 dark:hover:bg-dark-700/50'
+                      }`}
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                          inviteRole === 'ADMIN' ? 'bg-blue-100 dark:bg-blue-500/20' : 'bg-gray-100 dark:bg-dark-700'
+                        }`}>
+                          <Shield size={20} className={inviteRole === 'ADMIN' ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-dark-400'} />
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold text-gray-900 dark:text-white">Admin</span>
+                            {inviteRole === 'ADMIN' && <Check size={16} className="text-blue-500" />}
+                          </div>
+                          <p className="text-sm text-gray-500 dark:text-dark-400 mt-1">
+                            Akses penuh ke semua fitur. Dapat mengelola anggota tim dan mengundang pengguna baru.
+                          </p>
+                        </div>
+                      </div>
+                    </button>
+                  </div>
                 </div>
               </div>
               

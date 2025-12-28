@@ -20,7 +20,12 @@ export const ProtectedRoute = ({ children, requiredRoles }: ProtectedRouteProps)
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
+    return <Navigate to="/welcome" state={{ from: location }} replace />;
+  }
+
+  // Redirect to onboarding if not completed
+  if (user && user.onboardingCompleted === false) {
+    return <Navigate to="/onboarding" replace />;
   }
 
   if (requiredRoles && user && !requiredRoles.includes(user.role)) {

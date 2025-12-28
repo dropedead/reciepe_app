@@ -1,7 +1,106 @@
-import { useState, FormEvent } from 'react';
+/// <reference path="../../types/google.d.ts" />
+import { useState, FormEvent, useEffect, useCallback, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { User, Mail, Lock, Eye, EyeOff, AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
+import { User, Mail, Lock, Eye, EyeOff, AlertCircle, CheckCircle, Loader2, Zap, Shield, Clock } from 'lucide-react';
+
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+
+// Google Sign-In Component with Recommendation Badge using renderButton
+const GoogleSignUp = ({ onSuccess, onError }: { onSuccess: (credential: string) => void; onError: (error: string) => void }) => {
+  const [googleLoaded, setGoogleLoaded] = useState(false);
+  const buttonRef = useRef<HTMLDivElement>(null);
+
+  // Load Google Identity Services script
+  useEffect(() => {
+    if (!GOOGLE_CLIENT_ID) return;
+
+    const existingScript = document.querySelector('script[src="https://accounts.google.com/gsi/client"]');
+    if (existingScript) {
+      setGoogleLoaded(true);
+      return;
+    }
+
+    const script = document.createElement('script');
+    script.src = 'https://accounts.google.com/gsi/client';
+    script.async = true;
+    script.defer = true;
+    script.onload = () => setGoogleLoaded(true);
+    script.onerror = () => onError('Gagal memuat Google Sign-In');
+    document.head.appendChild(script);
+  }, [onError]);
+
+  // Initialize and render button
+  useEffect(() => {
+    if (!googleLoaded || !window.google || !GOOGLE_CLIENT_ID || !buttonRef.current) return;
+
+    window.google.accounts.id.initialize({
+      client_id: GOOGLE_CLIENT_ID,
+      callback: (response: { credential?: string }) => {
+        if (response.credential) {
+          onSuccess(response.credential);
+        } else {
+          onError('Gagal mendapatkan kredensial Google');
+        }
+      },
+    });
+
+    window.google.accounts.id.renderButton(buttonRef.current, {
+      theme: 'outline',
+      size: 'large',
+      width: 360,
+      text: 'signup_with',
+      shape: 'rectangular',
+    });
+  }, [googleLoaded, onSuccess, onError]);
+
+  if (!GOOGLE_CLIENT_ID) return null;
+
+  return (
+    <div className="space-y-4">
+      {/* Recommendation Badge */}
+      <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border border-green-200 dark:border-green-800 rounded-xl p-4">
+        <div className="flex items-center gap-2 mb-3">
+          <div className="flex items-center justify-center w-6 h-6 bg-green-500 rounded-full">
+            <Zap size={14} className="text-white" />
+          </div>
+          <span className="text-sm font-semibold text-green-700 dark:text-green-400">
+            Direkomendasikan
+          </span>
+        </div>
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 text-xs text-green-600 dark:text-green-400">
+            <Clock size={12} />
+            <span>Daftar dalam hitungan detik</span>
+          </div>
+          <div className="flex items-center gap-2 text-xs text-green-600 dark:text-green-400">
+            <Shield size={12} />
+            <span>Tidak perlu mengingat password baru</span>
+          </div>
+          <div className="flex items-center gap-2 text-xs text-green-600 dark:text-green-400">
+            <CheckCircle size={12} />
+            <span>Email langsung terverifikasi</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Google Sign-Up Button (rendered by Google) */}
+      <div ref={buttonRef} className="w-full flex justify-center"></div>
+
+      {/* Divider */}
+      <div className="relative my-6">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-gray-200 dark:border-dark-700" />
+        </div>
+        <div className="relative flex justify-center text-sm">
+          <span className="px-4 bg-white dark:bg-dark-800 text-gray-500 dark:text-dark-400">
+            atau daftar dengan email
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const Register = () => {
   const [name, setName] = useState('');
@@ -12,7 +111,7 @@ const Register = () => {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   
-  const { register } = useAuth();
+  const { register, googleLogin, refreshUser } = useAuth();
   const navigate = useNavigate();
 
   const validateForm = (): boolean => {
@@ -37,13 +136,38 @@ const Register = () => {
 
     try {
       await register(email, password, name);
-      navigate('/', { replace: true });
+      await refreshUser();
+      navigate('/onboarding', { replace: true });
     } catch (err: any) {
       setError(err.response?.data?.error || 'Registrasi gagal. Silakan coba lagi.');
     } finally {
       setIsLoading(false);
     }
   };
+
+  const handleGoogleSuccess = useCallback(async (credential: string) => {
+    setError('');
+    setIsLoading(true);
+    try {
+      const result = await googleLogin(credential);
+      await refreshUser();
+      
+      // Check if user needs onboarding
+      if (!result.user.onboardingCompleted) {
+        navigate('/onboarding', { replace: true });
+      } else {
+        navigate('/', { replace: true });
+      }
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Gagal masuk dengan Google');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [googleLogin, refreshUser, navigate]);
+
+  const handleGoogleError = useCallback((errorMsg: string) => {
+    setError(errorMsg);
+  }, []);
 
   const getPasswordStrength = () => {
     if (password.length === 0) return null;
@@ -82,6 +206,9 @@ const Register = () => {
               <span>{error}</span>
             </div>
           )}
+
+          {/* Google Sign-Up with Recommendation */}
+          <GoogleSignUp onSuccess={handleGoogleSuccess} onError={handleGoogleError} />
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-5">
@@ -204,7 +331,7 @@ const Register = () => {
                   Memproses...
                 </>
               ) : (
-                'Daftar'
+                'Daftar dengan Email'
               )}
             </button>
           </form>
@@ -228,3 +355,4 @@ const Register = () => {
 };
 
 export default Register;
+

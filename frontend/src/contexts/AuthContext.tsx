@@ -8,6 +8,8 @@ interface User {
   role: string;
   isVerified: boolean;
   avatar?: string | null;
+  onboardingCompleted?: boolean;
+  provider?: string; // 'local' or 'google'
 }
 
 interface AuthContextType {
@@ -16,6 +18,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string, name: string) => Promise<void>;
+  googleLogin: (credential: string) => Promise<{ user: User }>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
 }
@@ -71,6 +74,12 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     setUser(response.data.user);
   };
 
+  const googleLogin = async (credential: string) => {
+    const response = await authApi.googleLogin(credential);
+    setUser(response.data.user);
+    return { user: response.data.user };
+  };
+
   const logout = async () => {
     await authApi.logout();
     setUser(null);
@@ -82,6 +91,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     isAuthenticated: !!user,
     login,
     register,
+    googleLogin,
     logout,
     refreshUser,
   };

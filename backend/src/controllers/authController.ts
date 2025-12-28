@@ -185,4 +185,122 @@ export const updateProfile = async (req: Request, res: Response) => {
     }
 };
 
+// ============================================
+// Google OAuth Login
+// ============================================
 
+import { OAuth2Client } from 'google-auth-library';
+
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
+export const googleLogin = async (req: Request, res: Response) => {
+    try {
+        const { credential } = req.body;
+
+        if (!credential) {
+            return res.status(400).json({ error: 'Google credential wajib diisi' });
+        }
+
+        // Verify the ID token
+        const ticket = await googleClient.verifyIdToken({
+            idToken: credential,
+            audience: process.env.GOOGLE_CLIENT_ID,
+        });
+
+        const payload = ticket.getPayload();
+        if (!payload) {
+            return res.status(401).json({ error: 'Token Google tidak valid' });
+        }
+
+        const { sub: googleId, email, name, picture } = payload;
+
+        if (!email) {
+            return res.status(400).json({ error: 'Email diperlukan dari akun Google' });
+        }
+
+        const result = await authService.googleAuth({
+            email,
+            name: name || email.split('@')[0],
+            googleId: googleId!,
+            avatar: picture,
+        });
+
+        // Set cookie
+        res.cookie('token', result.token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            maxAge: 7 * 24 * 60 * 60 * 1000,
+        });
+
+        res.json({
+            message: 'Login dengan Google berhasil',
+            user: result.user,
+            token: result.token,
+        });
+    } catch (error) {
+        console.error('Google login error:', error);
+        res.status(401).json({ error: 'Autentikasi Google gagal' });
+    }
+};
+
+// ============================================
+// Onboarding Endpoints
+// ============================================
+
+// Setup organization (Onboarding Step 1)
+export const setupOrganization = async (req: Request, res: Response) => {
+    try {
+        if (!req.user) {
+            return res.status(401).json({ error: 'Tidak terautentikasi' });
+        }
+
+        const { name, description } = req.body;
+
+        if (!name || name.trim().length === 0) {
+            return res.status(400).json({ error: 'Nama organisasi wajib diisi' });
+        }
+
+        const organization = await authService.setupOrganization(req.user.id, { name, description });
+
+        res.status(201).json({
+            message: 'Organisasi berhasil dibuat',
+            organization,
+        });
+    } catch (error) {
+        console.error('Setup organization error:', error);
+        res.status(400).json({ error: error instanceof Error ? error.message : 'Gagal membuat organisasi' });
+    }
+};
+
+// Complete onboarding (skip invitation step)
+export const completeOnboarding = async (req: Request, res: Response) => {
+    try {
+        if (!req.user) {
+            return res.status(401).json({ error: 'Tidak terautentikasi' });
+        }
+
+        await authService.completeOnboarding(req.user.id);
+
+        res.json({ message: 'Onboarding selesai', success: true });
+    } catch (error) {
+        console.error('Complete onboarding error:', error);
+        res.status(400).json({ error: 'Gagal menyelesaikan onboarding' });
+    }
+};
+
+// Get onboarding status
+export const getOnboardingStatus = async (req: Request, res: Response) => {
+    try {
+        if (!req.user) {
+            return res.status(401).json({ error: 'Tidak terautentikasi' });
+        }
+
+        const status = await authService.getUserOnboardingStatus(req.user.id);
+
+        res.json(status);
+    } catch (error) {
+        console.error('Get onboarding status error:', error);
+        res.status(500).json({ error: 'Gagal mendapatkan status onboarding' });
+    }
+};

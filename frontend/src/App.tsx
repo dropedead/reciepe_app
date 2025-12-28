@@ -2,7 +2,7 @@ import { useState, useEffect, FC, useRef } from 'react';
 import { BrowserRouter, Routes, Route, NavLink, useLocation, Navigate, Link } from 'react-router-dom';
 import { 
   LayoutDashboard, ChefHat, Package, Calculator, Tags, UtensilsCrossed, 
-  Menu, X, ChevronDown, Database, TrendingUp, Scale, LogOut, User, Users, Sun, Moon 
+  Menu, X, ChevronDown, Database, TrendingUp, Scale, LogOut, User, Users, Sun, Moon, Gift, Sparkles 
 } from 'lucide-react';
 import Dashboard from './pages/Dashboard';
 import Ingredients from './pages/Ingredients';
@@ -16,13 +16,18 @@ import RecipeCategories from './pages/RecipeCategories';
 import MenuCategories from './pages/MenuCategories';
 import TeamManagement from './pages/TeamManagement';
 import Profile from './pages/Profile';
+import MenuBundling from './pages/MenuBundling';
+import LandingPage from './pages/LandingPage';
+import Onboarding from './pages/Onboarding';
 import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { OrganizationProvider, useOrganization } from './contexts/OrganizationContext';
 import { ThemeProvider, useTheme } from './contexts/ThemeContext';
+import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import OrganizationSwitcher from './components/OrganizationSwitcher';
+import LanguageSwitcher from './components/LanguageSwitcher';
 
 // Top Navbar Link Component
 const NavbarLink: FC<{
@@ -200,49 +205,62 @@ const SidebarLink: FC<{
 
 // Mobile Sidebar Content
 const MobileSidebarContent: FC<{ closeSidebar: () => void }> = ({ closeSidebar }) => {
+  const { t } = useLanguage();
   return (
     <nav className="flex-1 overflow-y-auto py-4 space-y-1">
       <SidebarLink to="/" icon={<LayoutDashboard size={20} />} onClick={closeSidebar}>
-        Dashboard
+        {t.nav.dashboard}
       </SidebarLink>
       
       <NavGroup 
-        title="Master Data" 
+        title={t.nav.masterData}
         icon={<Database size={20} />} 
         defaultOpen={true}
         childPaths={['/categories', '/ingredients', '/units', '/recipe-categories', '/menu-categories']}
       >
         <SidebarLink to="/ingredients" icon={<Package size={18} />} onClick={closeSidebar} isChild>
-          Master Bahan Baku
+          {t.nav.ingredients}
         </SidebarLink>
         <SidebarLink to="/categories" icon={<Tags size={18} />} onClick={closeSidebar} isChild>
-          Kategori Bahan
+          {t.nav.categories}
         </SidebarLink>
         <SidebarLink to="/units" icon={<Scale size={18} />} onClick={closeSidebar} isChild>
-          Master Satuan
+          {t.nav.units}
         </SidebarLink>
         <SidebarLink to="/recipe-categories" icon={<ChefHat size={18} />} onClick={closeSidebar} isChild>
-          Kategori Resep
+          {t.nav.recipeCategories}
         </SidebarLink>
         <SidebarLink to="/menu-categories" icon={<UtensilsCrossed size={18} />} onClick={closeSidebar} isChild>
-          Kategori Menu
+          {t.nav.menuCategories}
         </SidebarLink>
       </NavGroup>
 
       <SidebarLink to="/recipes" icon={<ChefHat size={20} />} onClick={closeSidebar}>
-        Resep
+        {t.nav.recipes}
       </SidebarLink>
       <SidebarLink to="/menus" icon={<UtensilsCrossed size={20} />} onClick={closeSidebar}>
-        Menu
+        {t.nav.menus}
       </SidebarLink>
-      <SidebarLink to="/calculator" icon={<Calculator size={20} />} onClick={closeSidebar}>
-        Kalkulator HPP
-      </SidebarLink>
+
+      <NavGroup 
+        title={t.nav.promotions}
+        icon={<Sparkles size={20} />} 
+        defaultOpen={false}
+        childPaths={['/bundling', '/calculator']}
+      >
+        <SidebarLink to="/bundling" icon={<Gift size={18} />} onClick={closeSidebar} isChild>
+          {t.nav.bundling}
+        </SidebarLink>
+        <SidebarLink to="/calculator" icon={<Calculator size={18} />} onClick={closeSidebar} isChild>
+          {t.nav.hppCalculator}
+        </SidebarLink>
+      </NavGroup>
+
       <SidebarLink to="/price-history" icon={<TrendingUp size={20} />} onClick={closeSidebar}>
-        Riwayat Harga
+        {t.nav.priceHistory}
       </SidebarLink>
       <SidebarLink to="/team" icon={<Users size={20} />} onClick={closeSidebar}>
-        Manajemen Tim
+        {t.nav.team}
       </SidebarLink>
     </nav>
   );
@@ -255,17 +273,19 @@ const App: FC = () => {
   const closeSidebar = (): void => setSidebarOpen(false);
 
   return (
-    <ThemeProvider>
-      <AuthProvider>
-        <BrowserRouter>
-          <AppRoutes 
-            sidebarOpen={sidebarOpen} 
-            toggleSidebar={toggleSidebar} 
-            closeSidebar={closeSidebar} 
-          />
-        </BrowserRouter>
-      </AuthProvider>
-    </ThemeProvider>
+    <LanguageProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <BrowserRouter>
+            <AppRoutes 
+              sidebarOpen={sidebarOpen} 
+              toggleSidebar={toggleSidebar} 
+              closeSidebar={closeSidebar} 
+            />
+          </BrowserRouter>
+        </AuthProvider>
+      </ThemeProvider>
+    </LanguageProvider>
   );
 };
 
@@ -276,6 +296,7 @@ const AppRoutes: FC<{
 }> = ({ sidebarOpen, toggleSidebar, closeSidebar }) => {
   const { isAuthenticated, isLoading, user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
+  const { t } = useLanguage();
 
   const handleLogout = async () => {
     await logout();
@@ -286,20 +307,41 @@ const AppRoutes: FC<{
       <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-dark-900">
         <div className="flex flex-col items-center gap-4">
           <div className="spinner w-8 h-8"></div>
-          <p className="text-gray-600 dark:text-dark-400">Memuat...</p>
+          <p className="text-gray-600 dark:text-dark-400">{t.actions.loading}</p>
         </div>
       </div>
     );
   }
 
+  // Check if user needs onboarding
+  const needsOnboarding = user && user.onboardingCompleted === false;
+
   return (
     <Routes>
-      {/* Public routes */}
+      {/* Landing page - Public route */}
+      <Route path="/welcome" element={
+        isAuthenticated 
+          ? (needsOnboarding ? <Navigate to="/onboarding" replace /> : <Navigate to="/" replace />)
+          : <LandingPage />
+      } />
+      
+      {/* Auth routes */}
       <Route path="/login" element={
-        isAuthenticated ? <Navigate to="/" replace /> : <Login />
+        isAuthenticated 
+          ? (needsOnboarding ? <Navigate to="/onboarding" replace /> : <Navigate to="/" replace />)
+          : <Login />
       } />
       <Route path="/register" element={
-        isAuthenticated ? <Navigate to="/" replace /> : <Register />
+        isAuthenticated 
+          ? (needsOnboarding ? <Navigate to="/onboarding" replace /> : <Navigate to="/" replace />)
+          : <Register />
+      } />
+
+      {/* Onboarding route */}
+      <Route path="/onboarding" element={
+        !isAuthenticated 
+          ? <Navigate to="/welcome" replace />
+          : (!needsOnboarding ? <Navigate to="/" replace /> : <Onboarding />)
       } />
 
       {/* Protected routes */}
@@ -344,6 +386,11 @@ const AppRoutes: FC<{
                   <OrganizationSwitcher />
                 </div>
 
+                {/* Language Switcher */}
+                <div className="p-4 border-b border-gray-200 dark:border-dark-700">
+                  <LanguageSwitcher />
+                </div>
+
                 {/* Navigation */}
                 <MobileSidebarContent closeSidebar={closeSidebar} />
 
@@ -372,14 +419,14 @@ const AppRoutes: FC<{
                       className="flex-1 flex items-center justify-center gap-2 p-2 text-gray-600 dark:text-dark-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-dark-700 rounded-lg transition-colors"
                     >
                       {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
-                      <span className="text-xs font-medium">{theme === 'light' ? 'Dark' : 'Light'}</span>
+                      <span className="text-xs font-medium">{theme === 'light' ? t.theme.dark : t.theme.light}</span>
                     </button>
                     <button 
                       onClick={handleLogout}
                       className="flex-1 flex items-center justify-center gap-2 p-2 text-gray-600 dark:text-dark-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors"
                     >
                       <LogOut size={18} />
-                      <span className="text-xs font-medium">Keluar</span>
+                      <span className="text-xs font-medium">{t.actions.logout}</span>
                     </button>
                   </div>
                 </div>
@@ -398,45 +445,63 @@ const AppRoutes: FC<{
                 {/* Main Navigation */}
                 <nav className="flex items-center gap-1 flex-1">
                   <NavbarLink to="/" icon={<LayoutDashboard size={18} />}>
-                    Dashboard
+                    {t.nav.dashboard}
                   </NavbarLink>
                   
+                  {/* Produk Dropdown - Resep, Menu, Riwayat Harga */}
                   <NavbarDropdown 
-                    title="Master Data" 
+                    title={t.nav.products}
+                    icon={<ChefHat size={18} />}
+                    childPaths={['/recipes', '/menus', '/price-history']}
+                  >
+                    <DropdownItem to="/recipes" icon={<ChefHat size={16} />}>
+                      {t.nav.recipes}
+                    </DropdownItem>
+                    <DropdownItem to="/menus" icon={<UtensilsCrossed size={16} />}>
+                      {t.nav.menus}
+                    </DropdownItem>
+                    <DropdownItem to="/price-history" icon={<TrendingUp size={16} />}>
+                      {t.nav.priceHistory}
+                    </DropdownItem>
+                  </NavbarDropdown>
+
+                  <NavbarDropdown 
+                    title={t.nav.masterData}
                     icon={<Database size={18} />}
                     childPaths={['/categories', '/ingredients', '/units', '/recipe-categories', '/menu-categories']}
                   >
                     <DropdownItem to="/ingredients" icon={<Package size={16} />}>
-                      Master Bahan Baku
+                      {t.nav.ingredients}
                     </DropdownItem>
                     <DropdownItem to="/categories" icon={<Tags size={16} />}>
-                      Kategori Bahan
+                      {t.nav.categories}
                     </DropdownItem>
                     <DropdownItem to="/units" icon={<Scale size={16} />}>
-                      Master Satuan
+                      {t.nav.units}
                     </DropdownItem>
                     <DropdownItem to="/recipe-categories" icon={<ChefHat size={16} />}>
-                      Kategori Resep
+                      {t.nav.recipeCategories}
                     </DropdownItem>
                     <DropdownItem to="/menu-categories" icon={<UtensilsCrossed size={16} />}>
-                      Kategori Menu
+                      {t.nav.menuCategories}
                     </DropdownItem>
                   </NavbarDropdown>
 
-                  <NavbarLink to="/recipes" icon={<ChefHat size={18} />}>
-                    Resep
-                  </NavbarLink>
-                  <NavbarLink to="/menus" icon={<UtensilsCrossed size={18} />}>
-                    Menu
-                  </NavbarLink>
-                  <NavbarLink to="/calculator" icon={<Calculator size={18} />}>
-                    Kalkulator HPP
-                  </NavbarLink>
-                  <NavbarLink to="/price-history" icon={<TrendingUp size={18} />}>
-                    Riwayat Harga
-                  </NavbarLink>
+                  <NavbarDropdown 
+                    title={t.nav.promotions}
+                    icon={<Sparkles size={18} />}
+                    childPaths={['/bundling', '/calculator']}
+                  >
+                    <DropdownItem to="/bundling" icon={<Gift size={16} />}>
+                      {t.nav.bundling}
+                    </DropdownItem>
+                    <DropdownItem to="/calculator" icon={<Calculator size={16} />}>
+                      {t.nav.hppCalculator}
+                    </DropdownItem>
+                  </NavbarDropdown>
+
                   <NavbarLink to="/team" icon={<Users size={18} />}>
-                    Tim
+                    {t.nav.team}
                   </NavbarLink>
                 </nav>
 
@@ -447,11 +512,14 @@ const AppRoutes: FC<{
                     <OrganizationSwitcher variant="compact" />
                   </div>
 
+                  {/* Language Switcher */}
+                  <LanguageSwitcher variant="compact" />
+
                   {/* Theme Toggle */}
                   <button 
                     onClick={toggleTheme}
                     className="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-dark-700 rounded-lg transition-colors"
-                    title={theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}
+                    title={theme === 'light' ? t.theme.switchToDark : t.theme.switchToLight}
                   >
                     {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
                   </button>
@@ -461,7 +529,7 @@ const AppRoutes: FC<{
                     <Link 
                       to="/profile" 
                       className="flex items-center gap-2 hover:opacity-80 transition-opacity"
-                      title="Profil Saya"
+                      title={t.nav.profile}
                     >
                       <div className="w-8 h-8 bg-gradient-to-br from-primary-400 to-primary-600 rounded-full flex items-center justify-center text-white font-semibold text-sm overflow-hidden">
                         {user?.avatar ? (
@@ -481,7 +549,7 @@ const AppRoutes: FC<{
                     <button 
                       onClick={handleLogout}
                       className="p-2 text-gray-600 dark:text-gray-300 hover:text-red-600 dark:hover:text-red-400 rounded-lg transition-colors"
-                      title="Keluar"
+                      title={t.actions.logout}
                     >
                       <LogOut size={18} />
                     </button>
@@ -528,6 +596,7 @@ const AppRoutes: FC<{
                   <Route path="/ingredients" element={<Ingredients />} />
                   <Route path="/recipes" element={<Recipes />} />
                   <Route path="/menus" element={<Menus />} />
+                  <Route path="/bundling" element={<MenuBundling />} />
                   <Route path="/calculator" element={<HPPCalculator />} />
                   <Route path="/price-history" element={<PriceHistory />} />
                   <Route path="/team" element={<TeamManagement />} />

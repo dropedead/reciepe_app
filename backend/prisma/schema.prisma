@@ -30,6 +30,7 @@ model Organization {
   menuCategories   MenuCategory[]
   recipeCategories RecipeCategory[]
   units            Unit[]
+  menuBundles      MenuBundle[]
 }
 
 model OrganizationMember {
@@ -104,9 +105,10 @@ model Menu {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  organization Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  MenuCategory MenuCategory? @relation(fields: [categoryId], references: [id])
-  MenuRecipe   MenuRecipe[]
+  organization    Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  MenuCategory    MenuCategory?     @relation(fields: [categoryId], references: [id])
+  MenuRecipe      MenuRecipe[]
+  MenuBundleItem  MenuBundleItem[]
 
   @@index([organizationId])
   @@index([categoryId])
@@ -245,7 +247,7 @@ model Unit {
 model User {
   id           Int       @id @default(autoincrement())
   email        String    @unique
-  password     String
+  password     String?   // Optional for OAuth users
   name         String
   avatar       String?   @db.Text // Profile photo (base64 or URL)
   role         String    @default("MEMBER") // Global role (for system admin purposes)
@@ -253,11 +255,21 @@ model User {
   verifyToken  String?
   resetToken   String?
   resetExpires DateTime?
+  
+  // OAuth fields
+  provider     String    @default("local") // "local", "google"
+  providerId   String?   // Google's unique user ID
+  
+  // Onboarding status
+  onboardingCompleted Boolean @default(false)
+  
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
   organizations    OrganizationMember[]
   sentInvitations  Invitation[]
+  
+  @@unique([provider, providerId])
 }
 
 // ============================================
@@ -282,4 +294,45 @@ model Invitation {
   @@index([email])
   @@index([organizationId])
   @@index([token])
+}
+
+// ============================================
+// Menu Bundling Models (For Promotions)
+// ============================================
+
+model MenuBundle {
+  id             Int       @id @default(autoincrement())
+  name           String
+  description    String?
+  imageUrl       String?
+  promotionType  String    @default("DISCOUNT") // DISCOUNT, BUY1GET1, BUY2GET1, PERCENTAGE, FIXED_PRICE
+  discountValue  Float?    // Discount percentage or fixed amount
+  bundlePrice    Float?    // Final bundle price (for FIXED_PRICE type)
+  isActive       Boolean   @default(true)
+  validFrom      DateTime?
+  validUntil     DateTime?
+  organizationId Int
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  organization Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  items        MenuBundleItem[]
+
+  @@index([organizationId])
+  @@index([isActive])
+}
+
+model MenuBundleItem {
+  id       Int     @id @default(autoincrement())
+  bundleId Int
+  menuId   Int
+  quantity Int     @default(1)
+  isFree   Boolean @default(false) // For BOGO promotions - marks which item is free
+
+  bundle MenuBundle @relation(fields: [bundleId], references: [id], onDelete: Cascade)
+  menu   Menu       @relation(fields: [menuId], references: [id], onDelete: Cascade)
+
+  @@unique([bundleId, menuId])
+  @@index([bundleId])
+  @@index([menuId])
 }

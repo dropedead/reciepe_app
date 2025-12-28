@@ -12,6 +12,7 @@ import menuCategoryRoutes from './menuCategoryRoutes';
 import authRoutes from './authRoutes';
 import organizationRoutes from './organizationRoutes';
 import invitationRoutes from './invitationRoutes';
+import bundlingRoutes from './bundlingRoutes';
 
 const router = Router();
 
@@ -35,6 +36,7 @@ router.use('/price-history', priceHistoryRoutes);
 router.use('/unit-master', unitMasterRoutes);
 router.use('/recipe-categories', recipeCategoryRoutes);
 router.use('/menu-categories', menuCategoryRoutes);
+router.use('/bundling', bundlingRoutes);
 
 export default router;
 

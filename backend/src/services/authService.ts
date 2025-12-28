@@ -26,6 +26,9 @@ export interface AuthResult {
         name: string;
         role: string;
         isVerified: boolean;
+        avatar?: string | null;
+        onboardingCompleted?: boolean;
+        provider?: string;
         defaultOrganization?: {
             id: number;
             name: string;
@@ -89,7 +92,7 @@ const generateSlug = (name: string): string => {
         .trim();
 };
 
-// Register new user with auto-created organization
+// Register new user WITHOUT auto-created organization (organization created during onboarding)
 export const register = async (input: RegisterInput): Promise<AuthResult> => {
     const { email, password, name } = input;
 
@@ -108,7 +111,7 @@ export const register = async (input: RegisterInput): Promise<AuthResult> => {
     const hashedPassword = await hashPassword(password);
     const verifyTokenValue = generateVerifyToken();
 
-    // Create user
+    // Create user WITHOUT organization
     const user = await prisma.user.create({
         data: {
             email,
@@ -116,44 +119,10 @@ export const register = async (input: RegisterInput): Promise<AuthResult> => {
             name,
             verifyToken: verifyTokenValue,
             role: 'OWNER',
+            provider: 'local',
+            onboardingCompleted: false,
         },
     });
-
-    // Generate organization slug from user's name
-    let orgSlug = generateSlug(`${name}-organization`);
-    let counter = 1;
-
-    // Ensure unique slug
-    while (await prisma.organization.findUnique({ where: { slug: orgSlug } })) {
-        orgSlug = `${generateSlug(`${name}-organization`)}-${counter}`;
-        counter++;
-    }
-
-    // Create default organization for user
-    const organization = await prisma.organization.create({
-        data: {
-            name: `${name}'s Organization`,
-            slug: orgSlug,
-            description: 'Organisasi default',
-            members: {
-                create: {
-                    userId: user.id,
-                    role: 'OWNER',
-                    isDefault: true,
-                },
-            },
-        },
-    });
-
-    // Seed default units for the organization
-    for (const unit of DEFAULT_UNITS) {
-        await prisma.unit.create({
-            data: {
-                ...unit,
-                organizationId: organization.id,
-            },
-        });
-    }
 
     // Generate token
     const token = generateToken(user.id);
@@ -165,11 +134,7 @@ export const register = async (input: RegisterInput): Promise<AuthResult> => {
             name: user.name,
             role: user.role,
             isVerified: user.isVerified,
-            defaultOrganization: {
-                id: organization.id,
-                name: organization.name,
-                slug: organization.slug,
-            },
+            onboardingCompleted: user.onboardingCompleted,
         },
         token,
     };
@@ -228,6 +193,8 @@ export const getUserById = async (id: number) => {
             avatar: true,
             role: true,
             isVerified: true,
+            onboardingCompleted: true,
+            provider: true,
             createdAt: true,
         },
     });
@@ -260,6 +227,7 @@ export const getUserWithOrganizations = async (id: number) => {
         avatar: user.avatar,
         role: user.role,
         isVerified: user.isVerified,
+        onboardingCompleted: user.onboardingCompleted,
         organizations: user.organizations.map((m) => ({
             id: m.organization.id,
             name: m.organization.name,
@@ -419,4 +387,172 @@ export const updateProfile = async (userId: number, input: UpdateProfileInput) =
     return { user: updatedUser, emailChanged };
 };
 
+// ============================================
+// Google OAuth Authentication
+// ============================================
 
+export interface GoogleAuthInput {
+    email: string;
+    name: string;
+    googleId: string;
+    avatar?: string;
+}
+
+export const googleAuth = async (input: GoogleAuthInput): Promise<AuthResult> => {
+    const { email, name, googleId, avatar } = input;
+
+    // Find existing user by Google ID or email
+    let user = await prisma.user.findFirst({
+        where: {
+            OR: [
+                { provider: 'google', providerId: googleId },
+                { email }
+            ]
+        }
+    });
+
+    if (!user) {
+        // Create new user with Google account
+        user = await prisma.user.create({
+            data: {
+                email,
+                name,
+                avatar,
+                provider: 'google',
+                providerId: googleId,
+                isVerified: true, // Google emails are verified
+                role: 'OWNER',
+                onboardingCompleted: false,
+            }
+        });
+    } else if (user.provider === 'local') {
+        // Link Google account to existing local user
+        user = await prisma.user.update({
+            where: { id: user.id },
+            data: {
+                provider: 'google',
+                providerId: googleId,
+                avatar: user.avatar || avatar,
+                isVerified: true,
+            }
+        });
+    }
+
+    // Get default organization if exists
+    const membership = await prisma.organizationMember.findFirst({
+        where: { userId: user.id, isDefault: true },
+        include: { organization: true }
+    });
+
+    const token = generateToken(user.id);
+
+    return {
+        user: {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            role: user.role,
+            isVerified: user.isVerified,
+            avatar: user.avatar,
+            onboardingCompleted: user.onboardingCompleted,
+            provider: user.provider,
+            defaultOrganization: membership ? {
+                id: membership.organization.id,
+                name: membership.organization.name,
+                slug: membership.organization.slug,
+            } : undefined,
+        },
+        token,
+    };
+};
+
+// ============================================
+// Onboarding Functions
+// ============================================
+
+export interface SetupOrganizationInput {
+    name: string;
+    description?: string;
+}
+
+export const setupOrganization = async (userId: number, input: SetupOrganizationInput) => {
+    const { name, description } = input;
+
+    // Check if user exists
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+        throw new Error('User tidak ditemukan');
+    }
+
+    // Check if user already has an organization
+    const existingMembership = await prisma.organizationMember.findFirst({
+        where: { userId, role: 'OWNER' }
+    });
+    if (existingMembership) {
+        throw new Error('Anda sudah memiliki organisasi');
+    }
+
+    // Generate organization slug
+    let orgSlug = generateSlug(name);
+    let counter = 1;
+    while (await prisma.organization.findUnique({ where: { slug: orgSlug } })) {
+        orgSlug = `${generateSlug(name)}-${counter}`;
+        counter++;
+    }
+
+    // Create organization
+    const organization = await prisma.organization.create({
+        data: {
+            name,
+            slug: orgSlug,
+            description: description || '',
+            members: {
+                create: {
+                    userId,
+                    role: 'OWNER',
+                    isDefault: true,
+                },
+            },
+        },
+    });
+
+    // Seed default units for the organization
+    for (const unit of DEFAULT_UNITS) {
+        await prisma.unit.create({
+            data: {
+                ...unit,
+                organizationId: organization.id,
+            },
+        });
+    }
+
+    // Note: onboardingCompleted is NOT set here
+    // It will be set when user calls completeOnboarding (after Step 2)
+
+    return organization;
+};
+
+export const completeOnboarding = async (userId: number) => {
+    const user = await prisma.user.update({
+        where: { id: userId },
+        data: { onboardingCompleted: true },
+    });
+    return user;
+};
+
+export const getUserOnboardingStatus = async (userId: number) => {
+    const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+            onboardingCompleted: true,
+            organizations: {
+                select: { organizationId: true }
+            }
+        }
+    });
+
+    return {
+        onboardingCompleted: user?.onboardingCompleted || false,
+        hasOrganization: (user?.organizations?.length || 0) > 0,
+    };
+};

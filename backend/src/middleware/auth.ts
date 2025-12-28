@@ -12,6 +12,8 @@ declare global {
                 role: string;
                 isVerified: boolean;
                 avatar?: string | null;
+                provider?: string;
+                onboardingCompleted?: boolean;
             };
         }
     }

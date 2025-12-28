@@ -6,7 +6,7 @@ interface Category {
   id: number;
   name: string;
   description: string | null;
-  _count?: { recipes: number };
+  _count?: { Recipe: number };
 }
 
 function RecipeCategories() {
@@ -151,7 +151,7 @@ function RecipeCategories() {
                     <td className="text-gray-500 dark:text-dark-400">{category.description || '-'}</td>
                     <td>
                       <span className="badge badge-primary">
-                        {category._count?.recipes || 0} resep
+                        {category._count?.Recipe || 0} resep
                       </span>
                     </td>
                     <td>
@@ -192,7 +192,7 @@ function RecipeCategories() {
                       <p className="text-sm text-gray-500 dark:text-dark-400 mt-1">{category.description}</p>
                     )}
                     <span className="badge badge-primary mt-2">
-                      {category._count?.recipes || 0} resep
+                      {category._count?.Recipe || 0} resep
                     </span>
                   </div>
                 </div>
