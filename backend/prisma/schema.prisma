@@ -268,8 +268,29 @@ model User {
 
   organizations    OrganizationMember[]
   sentInvitations  Invitation[]
+  notifications    Notification[]
   
   @@unique([provider, providerId])
+}
+
+// ============================================
+// Notification Model (For In-App Notifications)
+// ============================================
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  userId    Int      // Recipient user
+  type      String   // "INVITATION", "SYSTEM", "INFO"
+  title     String
+  message   String
+  data      Json?    // Additional data (invitationId, organizationId, etc.)
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@index([userId, isRead])
 }
 
 // ============================================

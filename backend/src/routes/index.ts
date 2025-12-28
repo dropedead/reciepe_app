@@ -13,6 +13,7 @@ import authRoutes from './authRoutes';
 import organizationRoutes from './organizationRoutes';
 import invitationRoutes from './invitationRoutes';
 import bundlingRoutes from './bundlingRoutes';
+import notificationRoutes from './notificationRoutes';
 
 const router = Router();
 
@@ -24,6 +25,9 @@ router.use('/organizations', organizationRoutes);
 
 // Invitation routes (mixed - some public, some need auth/tenant)
 router.use('/invitations', invitationRoutes);
+
+// Notification routes (authenticated, no tenant context)
+router.use('/notifications', notificationRoutes);
 
 // Tenant-scoped routes
 router.use('/categories', categoryRoutes);

@@ -66,6 +66,7 @@ export const organizationsApi = {
         api.put(`/organizations/${id}`, data),
     delete: (id: number): Promise<AxiosResponse> => api.delete(`/organizations/${id}`),
     setDefault: (id: number): Promise<AxiosResponse> => api.post(`/organizations/${id}/default`),
+    leave: (id: number): Promise<AxiosResponse> => api.post(`/organizations/${id}/leave`),
     getMembers: (id: number): Promise<AxiosResponse> => api.get(`/organizations/${id}/members`),
     addMember: (id: number, data: { email: string; role?: string }): Promise<AxiosResponse> =>
         api.post(`/organizations/${id}/members`, data),
@@ -197,6 +198,16 @@ export const bundlingApi = {
     update: (id: number, data: any): Promise<AxiosResponse> => api.put(`/bundling/${id}`, data),
     delete: (id: number): Promise<AxiosResponse> => api.delete(`/bundling/${id}`),
     calculate: (data: any): Promise<AxiosResponse> => api.post('/bundling/calculate', data)
+};
+
+// Notifications API
+export const notificationsApi = {
+    getAll: (unreadOnly?: boolean): Promise<AxiosResponse> =>
+        api.get('/notifications', { params: unreadOnly ? { unread: 'true' } : {} }),
+    getUnreadCount: (): Promise<AxiosResponse> => api.get('/notifications/unread-count'),
+    markAsRead: (id: number): Promise<AxiosResponse> => api.patch(`/notifications/${id}/read`),
+    markAllAsRead: (): Promise<AxiosResponse> => api.patch('/notifications/read-all'),
+    delete: (id: number): Promise<AxiosResponse> => api.delete(`/notifications/${id}`)
 };
 
 export default api;

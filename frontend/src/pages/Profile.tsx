@@ -1,12 +1,12 @@
 import { useState, useRef } from 'react';
-import { User, Mail, Building2, Shield, Key, Camera, Check, X, AlertCircle, Eye, EyeOff, Edit2, AlertTriangle } from 'lucide-react';
+import { User, Mail, Building2, Shield, Key, Camera, Check, X, AlertCircle, Eye, EyeOff, Edit2, AlertTriangle, LogOut, Loader2 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useOrganization } from '../contexts/OrganizationContext';
-import { authApi } from '../api';
+import { authApi, organizationsApi } from '../api';
 
 const Profile = () => {
   const { user, refreshUser } = useAuth();
-  const { organizations } = useOrganization();
+  const { organizations, refreshOrganizations } = useOrganization();
   
   // Edit profile states
   const [showEditModal, setShowEditModal] = useState(false);
@@ -29,6 +29,39 @@ const Profile = () => {
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [passwordError, setPasswordError] = useState('');
   const [passwordSuccess, setPasswordSuccess] = useState('');
+
+  // Leave organization states
+  const [leavingOrgId, setLeavingOrgId] = useState<number | null>(null);
+  const [leaveError, setLeaveError] = useState('');
+  const [showLeaveModal, setShowLeaveModal] = useState(false);
+  const [leaveOrgData, setLeaveOrgData] = useState<{ id: number; name: string } | null>(null);
+
+  const openLeaveModal = (orgId: number, orgName: string) => {
+    setLeaveOrgData({ id: orgId, name: orgName });
+    setShowLeaveModal(true);
+    setLeaveError('');
+  };
+
+  const closeLeaveModal = () => {
+    setShowLeaveModal(false);
+    setLeaveOrgData(null);
+    setLeaveError('');
+  };
+
+  const handleLeaveOrganization = async () => {
+    if (!leaveOrgData) return;
+    
+    setLeavingOrgId(leaveOrgData.id);
+    setLeaveError('');
+    try {
+      await organizationsApi.leave(leaveOrgData.id);
+      closeLeaveModal();
+      window.location.reload();
+    } catch (err: any) {
+      setLeaveError(err.response?.data?.error || 'Gagal keluar dari organisasi');
+      setLeavingOrgId(null);
+    }
+  };
 
   const getRoleBadge = (role: string) => {
     switch (role) {
@@ -287,6 +320,17 @@ const Profile = () => {
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Organisasi Saya</h2>
         </div>
 
+        {/* Leave Error Alert */}
+        {leaveError && (
+          <div className="alert alert-error mb-4">
+            <AlertCircle size={18} />
+            <span>{leaveError}</span>
+            <button onClick={() => setLeaveError('')} className="ml-auto">
+              <X size={16} />
+            </button>
+          </div>
+        )}
+
         <div className="space-y-3">
           {organizations.length === 0 ? (
             <p className="text-gray-500 dark:text-dark-400 text-sm">Tidak ada organisasi</p>
@@ -309,6 +353,21 @@ const Profile = () => {
                   {getRoleBadge(org.role)}
                   {org.isDefault && (
                     <span className="badge badge-secondary text-xs">Default</span>
+                  )}
+                  {/* Leave button - only show for non-owner roles */}
+                  {org.role !== 'OWNER' && (
+                    <button
+                      onClick={() => openLeaveModal(org.id, org.name)}
+                      disabled={leavingOrgId === org.id}
+                      className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors"
+                      title="Keluar dari organisasi"
+                    >
+                      {leavingOrgId === org.id ? (
+                        <Loader2 size={16} className="animate-spin" />
+                      ) : (
+                        <LogOut size={16} />
+                      )}
+                    </button>
                   )}
                 </div>
               </div>
@@ -614,6 +673,126 @@ const Profile = () => {
           </div>
         </div>
       )}
+      {/* Leave Organization Confirmation Modal */}
+      {showLeaveModal && leaveOrgData && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          {/* Backdrop */}
+          <div 
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm"
+            onClick={closeLeaveModal}
+          />
+          
+          {/* Modal */}
+          <div className="relative min-h-screen flex items-center justify-center p-4">
+            <div className="relative bg-white dark:bg-dark-800 rounded-2xl shadow-2xl w-full max-w-sm animate-fade-in overflow-hidden">
+              <div className="p-6 text-center">
+                <div className="w-16 h-16 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <LogOut size={32} className="text-red-600 dark:text-red-400" />
+                </div>
+                
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+                  Keluar dari Organisasi?
+                </h3>
+                
+                <p className="text-gray-500 dark:text-dark-400 mb-6">
+                  Apakah Anda yakin ingin keluar dari organisasi <span className="font-semibold text-gray-900 dark:text-white">"{leaveOrgData.name}"</span>? 
+                  <br className="my-2" />
+                  <span className="text-sm font-medium text-red-500">
+                    Anda harus diundang kembali untuk dapat bergabung lagi.
+                  </span>
+                </p>
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={closeLeaveModal}
+                    className="btn btn-secondary flex-1"
+                    disabled={leavingOrgId === leaveOrgData.id}
+                  >
+                    Batal
+                  </button>
+                  <button
+                    onClick={handleLeaveOrganization}
+                    className="btn btn-primary bg-red-600 hover:bg-red-700 border-red-600 hover:border-red-700 flex-1"
+                    disabled={leavingOrgId === leaveOrgData.id}
+                  >
+                    {leavingOrgId === leaveOrgData.id ? (
+                      <>
+                        <Loader2 size={18} className="animate-spin" />
+                        Keluar...
+                      </>
+                    ) : (
+                      <>
+                        Keluar
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Leave Organization Confirmation Modal */}
+      {showLeaveModal && leaveOrgData && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          {/* Backdrop */}
+          <div 
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm"
+            onClick={closeLeaveModal}
+          />
+          
+          {/* Modal */}
+          <div className="relative min-h-screen flex items-center justify-center p-4">
+            <div className="relative bg-white dark:bg-dark-800 rounded-2xl shadow-2xl w-full max-w-sm animate-fade-in overflow-hidden">
+              <div className="p-6 text-center">
+                <div className="w-16 h-16 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <LogOut size={32} className="text-red-600 dark:text-red-400" />
+                </div>
+                
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+                  Keluar dari Organisasi?
+                </h3>
+                
+                <p className="text-gray-500 dark:text-dark-400 mb-6">
+                  Apakah Anda yakin ingin keluar dari organisasi <span className="font-semibold text-gray-900 dark:text-white">"{leaveOrgData.name}"</span>? 
+                  <br className="my-2" />
+                  <span className="text-sm font-medium text-red-500">
+                    Anda harus diundang kembali untuk dapat bergabung lagi.
+                  </span>
+                </p>
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={closeLeaveModal}
+                    className="btn btn-secondary flex-1"
+                    disabled={leavingOrgId === leaveOrgData.id}
+                  >
+                    Batal
+                  </button>
+                  <button
+                    onClick={handleLeaveOrganization}
+                    className="btn btn-primary bg-red-600 hover:bg-red-700 border-red-600 hover:border-red-700 flex-1"
+                    disabled={leavingOrgId === leaveOrgData.id}
+                  >
+                    {leavingOrgId === leaveOrgData.id ? (
+                      <>
+                        <Loader2 size={18} className="animate-spin" />
+                        Keluar...
+                      </>
+                    ) : (
+                      <>
+                        Keluar
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };

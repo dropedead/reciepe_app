@@ -251,3 +251,61 @@ export const setDefaultOrganization = async (req: Request, res: Response) => {
         res.status(400).json({ error: message });
     }
 };
+
+// Leave organization (self-removal with notifications)
+export const leaveOrganization = async (req: Request, res: Response) => {
+    try {
+        if (!req.user) {
+            return res.status(401).json({ error: 'Unauthorized' });
+        }
+
+        const organizationId = parseInt(req.params.id);
+
+        // Check if user is owner - owners cannot leave
+        const role = await organizationService.getUserRole(req.user.id, organizationId);
+        if (role === 'OWNER') {
+            return res.status(400).json({
+                error: 'Owner tidak dapat keluar dari organisasi. Transfer kepemilikan terlebih dahulu atau hapus organisasi.'
+            });
+        }
+
+        if (!role) {
+            return res.status(400).json({ error: 'Anda bukan anggota organisasi ini' });
+        }
+
+        // Get organization details and members before leaving
+        const organization = await organizationService.getById(organizationId);
+        const members = await organizationService.getMembers(organizationId);
+
+        // Leave the organization
+        await organizationService.removeMember(organizationId, req.user.id);
+
+        // Import notification service to send notifications
+        const { createNotification } = await import('../services/notificationService');
+
+        // Send notification to all remaining members
+        const userName = req.user.name || req.user.email;
+        for (const member of members) {
+            if (member.userId !== req.user.id) {
+                await createNotification({
+                    userId: member.userId,
+                    type: 'INFO',
+                    title: 'Anggota Keluar',
+                    message: `${userName} telah keluar dari organisasi "${organization?.name}"`,
+                    data: {
+                        organizationId,
+                        organizationName: organization?.name,
+                        leftUserId: req.user.id,
+                        leftUserName: userName,
+                    },
+                });
+            }
+        }
+
+        res.json({ message: 'Berhasil keluar dari organisasi' });
+    } catch (error) {
+        console.error('Error leaving organization:', error);
+        const message = error instanceof Error ? error.message : 'Gagal keluar dari organisasi';
+        res.status(400).json({ error: message });
+    }
+};

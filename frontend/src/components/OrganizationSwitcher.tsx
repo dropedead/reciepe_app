@@ -132,7 +132,7 @@ const OrganizationSwitcher = ({ collapsed = false, variant = 'default' }: Organi
                                               text-gray-500 dark:text-dark-400 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-gray-50 dark:hover:bg-dark-700/50 
                                               rounded-lg transition-colors">
                                 <Building2 size={16} />
-                                Buat Organisasi Baru
+                                Atur Organisasi
                             </button>
                         </div>
                     </div>
@@ -239,7 +239,7 @@ const OrganizationSwitcher = ({ collapsed = false, variant = 'default' }: Organi
                                           text-gray-500 dark:text-dark-400 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-gray-50 dark:hover:bg-dark-700/50 
                                           rounded-lg transition-colors">
                             <Building2 size={16} />
-                            Buat Organisasi Baru
+                            Atur Organisasi
                         </button>
                     </div>
                 </div>

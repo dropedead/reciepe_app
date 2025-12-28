@@ -11,6 +11,7 @@ import {
     removeMember,
     updateMemberRole,
     setDefaultOrganization,
+    leaveOrganization,
 } from '../controllers/organizationController';
 
 const router = Router();
@@ -28,6 +29,9 @@ router.delete('/:id', deleteOrganization);
 // Set default organization
 router.post('/:id/default', setDefaultOrganization);
 
+// Leave organization
+router.post('/:id/leave', leaveOrganization);
+
 // Member management
 router.get('/:id/members', getMembers);
 router.post('/:id/members', addMember);
@@ -35,3 +39,4 @@ router.delete('/:id/members/:userId', removeMember);
 router.put('/:id/members/:userId', updateMemberRole);
 
 export default router;
+

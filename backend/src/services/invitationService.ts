@@ -1,5 +1,6 @@
 import prisma from '../config/database';
 import crypto from 'crypto';
+import { createInvitationNotification } from './notificationService';
 
 export interface CreateInvitationInput {
     email: string;
@@ -16,24 +17,27 @@ class InvitationService {
 
     // Create invitation
     async create(input: CreateInvitationInput) {
-        // Check if user is already a member
+        // Check if user is registered in the system
         const existingUser = await prisma.user.findUnique({
             where: { email: input.email },
         });
 
-        if (existingUser) {
-            const existingMembership = await prisma.organizationMember.findUnique({
-                where: {
-                    userId_organizationId: {
-                        userId: existingUser.id,
-                        organizationId: input.organizationId,
-                    },
-                },
-            });
+        if (!existingUser) {
+            throw new Error('Email tidak terdaftar di ResepKu. Hanya pengguna yang sudah terdaftar yang dapat diundang.');
+        }
 
-            if (existingMembership) {
-                throw new Error('User sudah menjadi member organisasi ini');
-            }
+        // Check if user is already a member of this organization
+        const existingMembership = await prisma.organizationMember.findUnique({
+            where: {
+                userId_organizationId: {
+                    userId: existingUser.id,
+                    organizationId: input.organizationId,
+                },
+            },
+        });
+
+        if (existingMembership) {
+            throw new Error('User sudah menjadi member organisasi ini');
         }
 
         // Check if there's already a pending invitation
@@ -79,6 +83,15 @@ class InvitationService {
                 },
             },
         });
+
+        // Create in-app notification for the invitee
+        await createInvitationNotification(
+            existingUser.id,
+            input.invitedBy,
+            invitation.organization.name,
+            invitation.id,
+            invitation.role
+        );
 
         return invitation;
     }

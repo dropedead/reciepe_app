@@ -89,6 +89,9 @@ export const OrganizationProvider = ({ children }: OrganizationProviderProps) =>
                 setOrganizations(prev => 
                     prev.map(o => ({ ...o, isDefault: o.id === organizationId }))
                 );
+                
+                // Auto refresh page to load new organization data
+                window.location.reload();
             } catch (err) {
                 console.error('Failed to set default organization:', err);
             }

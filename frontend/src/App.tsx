@@ -1,8 +1,8 @@
 import { useState, useEffect, FC, useRef } from 'react';
-import { BrowserRouter, Routes, Route, NavLink, useLocation, Navigate, Link } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, NavLink, useLocation, Navigate, Link, useNavigate } from 'react-router-dom';
 import { 
   LayoutDashboard, ChefHat, Package, Calculator, Tags, UtensilsCrossed, 
-  Menu, X, ChevronDown, Database, TrendingUp, Scale, LogOut, User, Users, Sun, Moon, Gift, Sparkles 
+  Menu, X, ChevronDown, Database, TrendingUp, Scale, LogOut, User, Users, Sun, Moon, Gift, Sparkles, Bell 
 } from 'lucide-react';
 import Dashboard from './pages/Dashboard';
 import Ingredients from './pages/Ingredients';
@@ -19,6 +19,7 @@ import Profile from './pages/Profile';
 import MenuBundling from './pages/MenuBundling';
 import LandingPage from './pages/LandingPage';
 import Onboarding from './pages/Onboarding';
+import Notifications from './pages/Notifications';
 import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
@@ -28,6 +29,7 @@ import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import OrganizationSwitcher from './components/OrganizationSwitcher';
 import LanguageSwitcher from './components/LanguageSwitcher';
+import { NotificationProvider, useNotifications } from './contexts/NotificationContext';
 
 // Top Navbar Link Component
 const NavbarLink: FC<{
@@ -262,7 +264,166 @@ const MobileSidebarContent: FC<{ closeSidebar: () => void }> = ({ closeSidebar }
       <SidebarLink to="/team" icon={<Users size={20} />} onClick={closeSidebar}>
         {t.nav.team}
       </SidebarLink>
+      <SidebarLink to="/notifications" icon={<Bell size={20} />} onClick={closeSidebar}>
+        Notifikasi
+      </SidebarLink>
     </nav>
+  );
+};
+
+// Notification Bell Component with Dropdown
+const NotificationBell: FC = () => {
+  const { notifications, unreadCount, markAsRead, acceptInvitation, declineInvitation } = useNotifications();
+  const [isOpen, setIsOpen] = useState(false);
+  const [actionLoading, setActionLoading] = useState<number | null>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diff = now.getTime() - date.getTime();
+    const minutes = Math.floor(diff / 60000);
+    const hours = Math.floor(diff / 3600000);
+    if (minutes < 1) return 'Baru saja';
+    if (minutes < 60) return `${minutes}m lalu`;
+    if (hours < 24) return `${hours}j lalu`;
+    return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+  };
+
+  const handleAccept = async (notificationId: number, invitationId: number) => {
+    setActionLoading(notificationId);
+    try {
+      await acceptInvitation(notificationId, invitationId);
+      setIsOpen(false);
+      navigate('/');
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleDecline = async (notificationId: number, invitationId: number) => {
+    setActionLoading(notificationId);
+    try {
+      await declineInvitation(notificationId, invitationId);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const recentNotifications = notifications.slice(0, 5);
+
+  return (
+    <div className="relative" ref={dropdownRef}>
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="relative p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-dark-700 rounded-lg transition-colors"
+        title="Notifikasi"
+      >
+        <Bell size={20} />
+        {unreadCount > 0 && (
+          <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1">
+            {unreadCount > 99 ? '99+' : unreadCount}
+          </span>
+        )}
+      </button>
+
+      {isOpen && (
+        <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-dark-800 border border-gray-200 dark:border-dark-700 rounded-xl shadow-lg overflow-hidden z-50 animate-fade-in">
+          {/* Header */}
+          <div className="px-4 py-3 border-b border-gray-100 dark:border-dark-700 flex items-center justify-between">
+            <h3 className="font-semibold text-gray-900 dark:text-white">Notifikasi</h3>
+            {unreadCount > 0 && (
+              <span className="text-xs text-primary-500 font-medium">{unreadCount} baru</span>
+            )}
+          </div>
+
+          {/* Notifications List */}
+          <div className="max-h-80 overflow-y-auto">
+            {recentNotifications.length === 0 ? (
+              <div className="px-4 py-8 text-center text-gray-500 dark:text-dark-400">
+                <Bell size={24} className="mx-auto mb-2 opacity-50" />
+                <p className="text-sm">Tidak ada notifikasi</p>
+              </div>
+            ) : (
+              recentNotifications.map((notif) => (
+                <div 
+                  key={notif.id}
+                  className={`px-4 py-3 border-b border-gray-50 dark:border-dark-700 last:border-0 ${
+                    !notif.isRead ? 'bg-primary-50/50 dark:bg-primary-500/5' : ''
+                  }`}
+                  onClick={() => !notif.isRead && markAsRead(notif.id)}
+                >
+                  <div className="flex items-start gap-3">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
+                      notif.type === 'INVITATION' ? 'bg-primary-100 dark:bg-primary-500/20' : 'bg-gray-100 dark:bg-dark-700'
+                    }`}>
+                      <Users size={14} className="text-primary-500" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900 dark:text-white flex items-center gap-1.5">
+                        {notif.title}
+                        {!notif.isRead && <span className="w-1.5 h-1.5 bg-primary-500 rounded-full" />}
+                      </p>
+                      <p className="text-xs text-gray-600 dark:text-dark-400 line-clamp-2 mt-0.5">
+                        {notif.message}
+                      </p>
+                      <p className="text-xs text-gray-400 dark:text-dark-500 mt-1">
+                        {formatDate(notif.createdAt)}
+                      </p>
+
+                      {/* Invitation Actions */}
+                      {notif.type === 'INVITATION' && notif.data?.invitationId && (
+                        <div className="flex items-center gap-2 mt-2">
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleAccept(notif.id, notif.data!.invitationId!); }}
+                            disabled={actionLoading === notif.id}
+                            className="px-3 py-1 text-xs font-medium bg-primary-500 text-white rounded-md hover:bg-primary-600 disabled:opacity-50"
+                          >
+                            Terima
+                          </button>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleDecline(notif.id, notif.data!.invitationId!); }}
+                            disabled={actionLoading === notif.id}
+                            className="px-3 py-1 text-xs font-medium bg-gray-200 dark:bg-dark-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-300 dark:hover:bg-dark-500 disabled:opacity-50"
+                          >
+                            Tolak
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* Footer - View All Link */}
+          <Link 
+            to="/notifications" 
+            onClick={() => setIsOpen(false)}
+            className="block px-4 py-3 text-center text-sm font-medium text-primary-500 hover:bg-gray-50 dark:hover:bg-dark-700 border-t border-gray-100 dark:border-dark-700"
+          >
+            Lihat Semua Notifikasi
+          </Link>
+        </div>
+      )}
+    </div>
   );
 };
 
@@ -348,6 +509,7 @@ const AppRoutes: FC<{
       <Route path="/*" element={
         <ProtectedRoute>
           <OrganizationProvider>
+            <NotificationProvider>
             <div className="min-h-screen bg-gray-50 dark:bg-dark-900 flex flex-col">
               {/* Mobile Sidebar Overlay */}
               {sidebarOpen && (
@@ -524,6 +686,9 @@ const AppRoutes: FC<{
                     {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
                   </button>
 
+                  {/* Notification Bell */}
+                  <NotificationBell />
+
                   {/* User Menu */}
                   <div className="flex items-center gap-2 pl-3 border-l border-gray-200 dark:border-dark-700">
                     <Link 
@@ -601,9 +766,11 @@ const AppRoutes: FC<{
                   <Route path="/price-history" element={<PriceHistory />} />
                   <Route path="/team" element={<TeamManagement />} />
                   <Route path="/profile" element={<Profile />} />
+                  <Route path="/notifications" element={<Notifications />} />
                 </Routes>
               </main>
             </div>
+          </NotificationProvider>
           </OrganizationProvider>
         </ProtectedRoute>
       } />
