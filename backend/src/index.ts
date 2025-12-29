@@ -7,8 +7,14 @@ import { config } from './config/env';
 const app = express();
 
 // Middleware
+const allowedOrigins = [
+    'http://localhost:5173',
+    'http://localhost:3000',
+    process.env.FRONTEND_URL, // Production frontend URL from environment
+].filter(Boolean) as string[];
+
 app.use(cors({
-    origin: ['http://localhost:5173', 'http://localhost:3000'],
+    origin: allowedOrigins,
     credentials: true,
 }));
 app.use(express.json({ limit: '50mb' }));
