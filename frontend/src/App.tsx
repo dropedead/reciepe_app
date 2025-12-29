@@ -2,7 +2,7 @@ import { useState, useEffect, FC, useRef } from 'react';
 import { BrowserRouter, Routes, Route, NavLink, useLocation, Navigate, Link, useNavigate } from 'react-router-dom';
 import { 
   LayoutDashboard, ChefHat, Package, Calculator, Tags, UtensilsCrossed, 
-  Menu, X, ChevronDown, Database, TrendingUp, Scale, LogOut, User, Users, Sun, Moon, Gift, Sparkles, Bell 
+  Menu, X, ChevronDown, Database, TrendingUp, Scale, LogOut, User, Users, Sun, Moon, Gift, Sparkles, Bell, Book, Settings 
 } from 'lucide-react';
 import Dashboard from './pages/Dashboard';
 import Ingredients from './pages/Ingredients';
@@ -20,6 +20,8 @@ import MenuBundling from './pages/MenuBundling';
 import LandingPage from './pages/LandingPage';
 import Onboarding from './pages/Onboarding';
 import Notifications from './pages/Notifications';
+import Documentation from './pages/Documentation';
+import OrganizationSettings from './pages/OrganizationSettings';
 import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
@@ -214,10 +216,32 @@ const MobileSidebarContent: FC<{ closeSidebar: () => void }> = ({ closeSidebar }
         {t.nav.dashboard}
       </SidebarLink>
       
+      {/* Menu Lab Group */}
+      <NavGroup 
+        title="Menu Lab"
+        icon={<ChefHat size={20} />} 
+        defaultOpen={true}
+        childPaths={['/recipes', '/menus', '/calculator', '/price-history']}
+      >
+        <SidebarLink to="/recipes" icon={<ChefHat size={18} />} onClick={closeSidebar} isChild>
+          {t.nav.recipes}
+        </SidebarLink>
+        <SidebarLink to="/menus" icon={<UtensilsCrossed size={18} />} onClick={closeSidebar} isChild>
+          {t.nav.menus}
+        </SidebarLink>
+        <SidebarLink to="/calculator" icon={<Calculator size={18} />} onClick={closeSidebar} isChild>
+          {t.nav.hppCalculator}
+        </SidebarLink>
+        <SidebarLink to="/price-history" icon={<TrendingUp size={18} />} onClick={closeSidebar} isChild>
+          {t.nav.priceHistory}
+        </SidebarLink>
+      </NavGroup>
+
+      {/* Master Data Group */}
       <NavGroup 
         title={t.nav.masterData}
         icon={<Database size={20} />} 
-        defaultOpen={true}
+        defaultOpen={false}
         childPaths={['/categories', '/ingredients', '/units', '/recipe-categories', '/menu-categories']}
       >
         <SidebarLink to="/ingredients" icon={<Package size={18} />} onClick={closeSidebar} isChild>
@@ -237,36 +261,38 @@ const MobileSidebarContent: FC<{ closeSidebar: () => void }> = ({ closeSidebar }
         </SidebarLink>
       </NavGroup>
 
-      <SidebarLink to="/recipes" icon={<ChefHat size={20} />} onClick={closeSidebar}>
-        {t.nav.recipes}
-      </SidebarLink>
-      <SidebarLink to="/menus" icon={<UtensilsCrossed size={20} />} onClick={closeSidebar}>
-        {t.nav.menus}
-      </SidebarLink>
-
+      {/* Promosi Group */}
       <NavGroup 
         title={t.nav.promotions}
         icon={<Sparkles size={20} />} 
         defaultOpen={false}
-        childPaths={['/bundling', '/calculator']}
+        childPaths={['/bundling']}
       >
         <SidebarLink to="/bundling" icon={<Gift size={18} />} onClick={closeSidebar} isChild>
           {t.nav.bundling}
         </SidebarLink>
-        <SidebarLink to="/calculator" icon={<Calculator size={18} />} onClick={closeSidebar} isChild>
-          {t.nav.hppCalculator}
-        </SidebarLink>
       </NavGroup>
 
-      <SidebarLink to="/price-history" icon={<TrendingUp size={20} />} onClick={closeSidebar}>
-        {t.nav.priceHistory}
-      </SidebarLink>
-      <SidebarLink to="/team" icon={<Users size={20} />} onClick={closeSidebar}>
-        {t.nav.team}
-      </SidebarLink>
-      <SidebarLink to="/notifications" icon={<Bell size={20} />} onClick={closeSidebar}>
-        Notifikasi
-      </SidebarLink>
+      {/* Lainnya Group */}
+      <NavGroup 
+        title="Lainnya"
+        icon={<Users size={20} />} 
+        defaultOpen={false}
+        childPaths={['/team', '/organization-settings', '/notifications', '/docs']}
+      >
+        <SidebarLink to="/team" icon={<Users size={18} />} onClick={closeSidebar} isChild>
+          {t.nav.team}
+        </SidebarLink>
+        <SidebarLink to="/organization-settings" icon={<Settings size={18} />} onClick={closeSidebar} isChild>
+          Pengaturan Organisasi
+        </SidebarLink>
+        <SidebarLink to="/notifications" icon={<Bell size={18} />} onClick={closeSidebar} isChild>
+          Notifikasi
+        </SidebarLink>
+        <SidebarLink to="/docs" icon={<Book size={18} />} onClick={closeSidebar} isChild>
+          Panduan
+        </SidebarLink>
+      </NavGroup>
     </nav>
   );
 };
@@ -510,7 +536,7 @@ const AppRoutes: FC<{
         <ProtectedRoute>
           <OrganizationProvider>
             <NotificationProvider>
-            <div className="min-h-screen bg-gray-50 dark:bg-dark-900 flex flex-col">
+            <div className="min-h-screen bg-gray-50 dark:bg-dark-900 flex">
               {/* Mobile Sidebar Overlay */}
               {sidebarOpen && (
                 <div 
@@ -548,11 +574,6 @@ const AppRoutes: FC<{
                   <OrganizationSwitcher />
                 </div>
 
-                {/* Language Switcher */}
-                <div className="p-4 border-b border-gray-200 dark:border-dark-700">
-                  <LanguageSwitcher />
-                </div>
-
                 {/* Navigation */}
                 <MobileSidebarContent closeSidebar={closeSidebar} />
 
@@ -581,194 +602,223 @@ const AppRoutes: FC<{
                       className="flex-1 flex items-center justify-center gap-2 p-2 text-gray-600 dark:text-dark-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-dark-700 rounded-lg transition-colors"
                     >
                       {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
-                      <span className="text-xs font-medium">{theme === 'light' ? t.theme.dark : t.theme.light}</span>
                     </button>
                     <button 
                       onClick={handleLogout}
                       className="flex-1 flex items-center justify-center gap-2 p-2 text-gray-600 dark:text-dark-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors"
                     >
                       <LogOut size={18} />
-                      <span className="text-xs font-medium">{t.actions.logout}</span>
                     </button>
                   </div>
                 </div>
               </aside>
 
-              {/* Top Navbar - Desktop/Tablet */}
-              <header className="hidden md:flex sticky top-0 z-40 h-16 bg-white dark:bg-dark-800 border-b border-gray-200 dark:border-dark-700 items-center px-4 lg:px-6">
+              {/* Desktop Sidebar - Fixed Left */}
+              <aside className="hidden md:flex md:w-64 lg:w-72 bg-white dark:bg-dark-800 border-r border-gray-200 dark:border-dark-700 flex-col fixed inset-y-0 left-0 z-30">
                 {/* Logo */}
-                <div className="flex items-center gap-3 mr-8">
-                  <div className="w-9 h-9 bg-gradient-to-br from-primary-400 to-primary-600 rounded-xl flex items-center justify-center text-lg shadow-glow">
-                    🍳
+                <div className="h-16 flex items-center px-4 border-b border-gray-200 dark:border-dark-700">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-gradient-to-br from-primary-400 to-primary-600 rounded-xl flex items-center justify-center text-xl shadow-glow">
+                      🍳
+                    </div>
+                    <h1 className="text-xl font-bold text-gradient">ResepKu</h1>
                   </div>
-                  <h1 className="text-lg font-bold text-gradient">ResepKu</h1>
                 </div>
 
-                {/* Main Navigation */}
-                <nav className="flex items-center gap-1 flex-1">
-                  <NavbarLink to="/" icon={<LayoutDashboard size={18} />}>
-                    {t.nav.dashboard}
-                  </NavbarLink>
-                  
-                  {/* Produk Dropdown - Resep, Menu, Riwayat Harga */}
-                  <NavbarDropdown 
-                    title={t.nav.products}
-                    icon={<ChefHat size={18} />}
-                    childPaths={['/recipes', '/menus', '/price-history']}
+                {/* Organization Switcher */}
+                <div className="p-3 border-b border-gray-200 dark:border-dark-700">
+                  <OrganizationSwitcher />
+                </div>
+
+                {/* Navigation */}
+                <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
+                  <NavLink 
+                    to="/" 
+                    end
+                    className={({ isActive }) => `
+                      flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200
+                      ${isActive 
+                        ? 'bg-primary-500/10 text-primary-500 border-l-2 border-primary-500' 
+                        : 'text-gray-600 dark:text-dark-400 hover:bg-gray-100 dark:hover:bg-dark-700/50 hover:text-gray-900 dark:hover:text-white'
+                      }
+                    `}
                   >
-                    <DropdownItem to="/recipes" icon={<ChefHat size={16} />}>
-                      {t.nav.recipes}
-                    </DropdownItem>
-                    <DropdownItem to="/menus" icon={<UtensilsCrossed size={16} />}>
-                      {t.nav.menus}
-                    </DropdownItem>
-                    <DropdownItem to="/price-history" icon={<TrendingUp size={16} />}>
-                      {t.nav.priceHistory}
-                    </DropdownItem>
-                  </NavbarDropdown>
+                    <LayoutDashboard size={20} />
+                    <span className="font-medium">{t.nav.dashboard}</span>
+                  </NavLink>
 
-                  <NavbarDropdown 
-                    title={t.nav.masterData}
-                    icon={<Database size={18} />}
-                    childPaths={['/categories', '/ingredients', '/units', '/recipe-categories', '/menu-categories']}
-                  >
-                    <DropdownItem to="/ingredients" icon={<Package size={16} />}>
-                      {t.nav.ingredients}
-                    </DropdownItem>
-                    <DropdownItem to="/categories" icon={<Tags size={16} />}>
-                      {t.nav.categories}
-                    </DropdownItem>
-                    <DropdownItem to="/units" icon={<Scale size={16} />}>
-                      {t.nav.units}
-                    </DropdownItem>
-                    <DropdownItem to="/recipe-categories" icon={<ChefHat size={16} />}>
-                      {t.nav.recipeCategories}
-                    </DropdownItem>
-                    <DropdownItem to="/menu-categories" icon={<UtensilsCrossed size={16} />}>
-                      {t.nav.menuCategories}
-                    </DropdownItem>
-                  </NavbarDropdown>
-
-                  <NavbarDropdown 
-                    title={t.nav.promotions}
-                    icon={<Sparkles size={18} />}
-                    childPaths={['/bundling', '/calculator']}
-                  >
-                    <DropdownItem to="/bundling" icon={<Gift size={16} />}>
-                      {t.nav.bundling}
-                    </DropdownItem>
-                    <DropdownItem to="/calculator" icon={<Calculator size={16} />}>
-                      {t.nav.hppCalculator}
-                    </DropdownItem>
-                  </NavbarDropdown>
-
-                  <NavbarLink to="/team" icon={<Users size={18} />}>
-                    {t.nav.team}
-                  </NavbarLink>
-                </nav>
-
-                {/* Right Section - Organization & User */}
-                <div className="flex items-center gap-3">
-                  {/* Organization Switcher */}
-                  <div className="hidden lg:block">
-                    <OrganizationSwitcher variant="compact" />
+                  {/* Menu Lab Group */}
+                  <div className="pt-4">
+                    <p className="px-3 text-xs font-semibold text-gray-400 dark:text-dark-500 uppercase tracking-wider mb-2">
+                      Menu Lab
+                    </p>
+                    <NavLink to="/recipes" className={({ isActive }) => `flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${isActive ? 'bg-primary-500/10 text-primary-500' : 'text-gray-600 dark:text-dark-400 hover:bg-gray-100 dark:hover:bg-dark-700/50'}`}>
+                      <ChefHat size={18} />
+                      <span>{t.nav.recipes}</span>
+                    </NavLink>
+                    <NavLink to="/menus" className={({ isActive }) => `flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${isActive ? 'bg-primary-500/10 text-primary-500' : 'text-gray-600 dark:text-dark-400 hover:bg-gray-100 dark:hover:bg-dark-700/50'}`}>
+                      <UtensilsCrossed size={18} />
+                      <span>{t.nav.menus}</span>
+                    </NavLink>
+                    <NavLink to="/calculator" className={({ isActive }) => `flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${isActive ? 'bg-primary-500/10 text-primary-500' : 'text-gray-600 dark:text-dark-400 hover:bg-gray-100 dark:hover:bg-dark-700/50'}`}>
+                      <Calculator size={18} />
+                      <span>{t.nav.hppCalculator}</span>
+                    </NavLink>
+                    <NavLink to="/price-history" className={({ isActive }) => `flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${isActive ? 'bg-primary-500/10 text-primary-500' : 'text-gray-600 dark:text-dark-400 hover:bg-gray-100 dark:hover:bg-dark-700/50'}`}>
+                      <TrendingUp size={18} />
+                      <span>{t.nav.priceHistory}</span>
+                    </NavLink>
                   </div>
 
-                  {/* Language Switcher */}
-                  <LanguageSwitcher variant="compact" />
+                  {/* Master Data Group */}
+                  <div className="pt-4">
+                    <p className="px-3 text-xs font-semibold text-gray-400 dark:text-dark-500 uppercase tracking-wider mb-2">
+                      {t.nav.masterData}
+                    </p>
+                    <NavLink to="/ingredients" className={({ isActive }) => `flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${isActive ? 'bg-primary-500/10 text-primary-500' : 'text-gray-600 dark:text-dark-400 hover:bg-gray-100 dark:hover:bg-dark-700/50'}`}>
+                      <Package size={18} />
+                      <span>{t.nav.ingredients}</span>
+                    </NavLink>
+                    <NavLink to="/categories" className={({ isActive }) => `flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${isActive ? 'bg-primary-500/10 text-primary-500' : 'text-gray-600 dark:text-dark-400 hover:bg-gray-100 dark:hover:bg-dark-700/50'}`}>
+                      <Tags size={18} />
+                      <span>{t.nav.categories}</span>
+                    </NavLink>
+                    <NavLink to="/units" className={({ isActive }) => `flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${isActive ? 'bg-primary-500/10 text-primary-500' : 'text-gray-600 dark:text-dark-400 hover:bg-gray-100 dark:hover:bg-dark-700/50'}`}>
+                      <Scale size={18} />
+                      <span>{t.nav.units}</span>
+                    </NavLink>
+                    <NavLink to="/recipe-categories" className={({ isActive }) => `flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${isActive ? 'bg-primary-500/10 text-primary-500' : 'text-gray-600 dark:text-dark-400 hover:bg-gray-100 dark:hover:bg-dark-700/50'}`}>
+                      <ChefHat size={18} />
+                      <span>{t.nav.recipeCategories}</span>
+                    </NavLink>
+                    <NavLink to="/menu-categories" className={({ isActive }) => `flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${isActive ? 'bg-primary-500/10 text-primary-500' : 'text-gray-600 dark:text-dark-400 hover:bg-gray-100 dark:hover:bg-dark-700/50'}`}>
+                      <UtensilsCrossed size={18} />
+                      <span>{t.nav.menuCategories}</span>
+                    </NavLink>
+                  </div>
 
-                  {/* Theme Toggle */}
-                  <button 
-                    onClick={toggleTheme}
-                    className="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-dark-700 rounded-lg transition-colors"
-                    title={theme === 'light' ? t.theme.switchToDark : t.theme.switchToLight}
+                  {/* Promotions Group */}
+                  <div className="pt-4">
+                    <p className="px-3 text-xs font-semibold text-gray-400 dark:text-dark-500 uppercase tracking-wider mb-2">
+                      {t.nav.promotions}
+                    </p>
+                    <NavLink to="/bundling" className={({ isActive }) => `flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${isActive ? 'bg-primary-500/10 text-primary-500' : 'text-gray-600 dark:text-dark-400 hover:bg-gray-100 dark:hover:bg-dark-700/50'}`}>
+                      <Gift size={18} />
+                      <span>{t.nav.bundling}</span>
+                    </NavLink>
+                  </div>
+
+                  {/* Others */}
+                  <div className="pt-4">
+                    <p className="px-3 text-xs font-semibold text-gray-400 dark:text-dark-500 uppercase tracking-wider mb-2">
+                      Lainnya
+                    </p>
+                    <NavLink to="/team" className={({ isActive }) => `flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${isActive ? 'bg-primary-500/10 text-primary-500' : 'text-gray-600 dark:text-dark-400 hover:bg-gray-100 dark:hover:bg-dark-700/50'}`}>
+                      <Users size={18} />
+                      <span>{t.nav.team}</span>
+                    </NavLink>
+                    <NavLink to="/organization-settings" className={({ isActive }) => `flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${isActive ? 'bg-primary-500/10 text-primary-500' : 'text-gray-600 dark:text-dark-400 hover:bg-gray-100 dark:hover:bg-dark-700/50'}`}>
+                      <Settings size={18} />
+                      <span>Pengaturan Organisasi</span>
+                    </NavLink>
+                    <NavLink to="/docs" className={({ isActive }) => `flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${isActive ? 'bg-primary-500/10 text-primary-500' : 'text-gray-600 dark:text-dark-400 hover:bg-gray-100 dark:hover:bg-dark-700/50'}`}>
+                      <Book size={18} />
+                      <span>Panduan</span>
+                    </NavLink>
+                  </div>
+                </nav>
+
+                {/* User Section at Bottom */}
+                <div className="p-3 border-t border-gray-200 dark:border-dark-700">
+                  <Link 
+                    to="/profile" 
+                    className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-700 transition-colors"
                   >
-                    {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
-                  </button>
-
-                  {/* Notification Bell */}
-                  <NotificationBell />
-
-                  {/* User Menu */}
-                  <div className="flex items-center gap-2 pl-3 border-l border-gray-200 dark:border-dark-700">
-                    <Link 
-                      to="/profile" 
-                      className="flex items-center gap-2 hover:opacity-80 transition-opacity"
-                      title={t.nav.profile}
+                    <div className="w-9 h-9 bg-gradient-to-br from-primary-400 to-primary-600 rounded-full flex items-center justify-center text-white font-semibold text-sm overflow-hidden">
+                      {user?.avatar ? (
+                        <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
+                      ) : (
+                        user?.name?.charAt(0).toUpperCase() || 'U'
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-sm truncate text-gray-900 dark:text-white">{user?.name}</p>
+                      <p className="text-xs text-gray-500 dark:text-dark-400 truncate">{user?.email}</p>
+                    </div>
+                  </Link>
+                  <div className="flex items-center gap-1 mt-2">
+                    <LanguageSwitcher variant="compact" />
+                    <button 
+                      onClick={toggleTheme}
+                      className="p-2 text-gray-500 dark:text-dark-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-dark-700 rounded-lg transition-colors"
+                      title={theme === 'light' ? 'Mode Gelap' : 'Mode Terang'}
                     >
-                      <div className="w-8 h-8 bg-gradient-to-br from-primary-400 to-primary-600 rounded-full flex items-center justify-center text-white font-semibold text-sm overflow-hidden">
-                        {user?.avatar ? (
-                          <img 
-                            src={user.avatar} 
-                            alt={user.name} 
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          user?.name?.charAt(0).toUpperCase() || 'U'
-                        )}
-                      </div>
-                      <div className="hidden lg:block">
-                        <p className="font-medium text-sm text-gray-900 dark:text-white">{user?.name}</p>
-                      </div>
-                    </Link>
+                      {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
+                    </button>
                     <button 
                       onClick={handleLogout}
-                      className="p-2 text-gray-600 dark:text-gray-300 hover:text-red-600 dark:hover:text-red-400 rounded-lg transition-colors"
-                      title={t.actions.logout}
+                      className="p-2 text-gray-500 dark:text-dark-400 hover:text-red-600 dark:hover:text-red-400 rounded-lg transition-colors"
+                      title="Logout"
                     >
                       <LogOut size={18} />
                     </button>
                   </div>
                 </div>
-              </header>
+              </aside>
 
-              {/* Mobile Header */}
-              <header className="md:hidden sticky top-0 z-40 h-14 bg-white dark:bg-dark-800 border-b border-gray-200 dark:border-dark-700 flex items-center justify-between px-4">
-                <button 
-                  className="p-2 text-gray-600 dark:text-dark-400 hover:text-gray-900 dark:hover:text-white rounded-lg hover:bg-gray-100 dark:hover:bg-dark-700"
-                  onClick={toggleSidebar}
-                >
-                  <Menu size={24} />
-                </button>
-                <div className="flex items-center gap-2">
-                  <span className="text-xl">🍳</span>
-                  <span className="font-bold text-gradient">ResepKu</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <button 
-                    onClick={toggleTheme}
-                    className="p-2 text-gray-600 dark:text-dark-400 hover:text-gray-900 dark:hover:text-white rounded-lg"
-                  >
-                    {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
-                  </button>
-                  <button 
-                    onClick={handleLogout}
-                    className="p-2 text-gray-600 dark:text-dark-400 hover:text-red-600 dark:hover:text-red-400 rounded-lg"
-                  >
-                    <LogOut size={20} />
-                  </button>
-                </div>
-              </header>
+              {/* Main Content Area */}
+              <div className="flex-1 flex flex-col md:ml-64 lg:ml-72">
+                {/* Desktop Top Bar */}
+                <header className="hidden md:flex sticky top-0 z-20 h-14 bg-white dark:bg-dark-800 border-b border-gray-200 dark:border-dark-700 items-center justify-end px-4 lg:px-6 gap-3">
+                  {/* Notification Bell */}
+                  <NotificationBell />
+                </header>
 
-              {/* Page Content */}
-              <main className="flex-1 overflow-auto p-4 lg:p-6">
-                <Routes>
-                  <Route path="/" element={<Dashboard />} />
-                  <Route path="/categories" element={<Categories />} />
-                  <Route path="/recipe-categories" element={<RecipeCategories />} />
-                  <Route path="/menu-categories" element={<MenuCategories />} />
-                  <Route path="/units" element={<Units />} />
-                  <Route path="/ingredients" element={<Ingredients />} />
-                  <Route path="/recipes" element={<Recipes />} />
-                  <Route path="/menus" element={<Menus />} />
-                  <Route path="/bundling" element={<MenuBundling />} />
-                  <Route path="/calculator" element={<HPPCalculator />} />
-                  <Route path="/price-history" element={<PriceHistory />} />
-                  <Route path="/team" element={<TeamManagement />} />
-                  <Route path="/profile" element={<Profile />} />
-                  <Route path="/notifications" element={<Notifications />} />
-                </Routes>
-              </main>
+                {/* Mobile Header */}
+                <header className="md:hidden sticky top-0 z-40 h-14 bg-white dark:bg-dark-800 border-b border-gray-200 dark:border-dark-700 flex items-center justify-between px-4">
+                  <button 
+                    className="p-2 text-gray-600 dark:text-dark-400 hover:text-gray-900 dark:hover:text-white rounded-lg hover:bg-gray-100 dark:hover:bg-dark-700"
+                    onClick={toggleSidebar}
+                  >
+                    <Menu size={24} />
+                  </button>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl">🍳</span>
+                    <span className="font-bold text-gradient">ResepKu</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <NotificationBell />
+                    <button 
+                      onClick={toggleTheme}
+                      className="p-2 text-gray-600 dark:text-dark-400 hover:text-gray-900 dark:hover:text-white rounded-lg"
+                    >
+                      {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
+                    </button>
+                  </div>
+                </header>
+
+                {/* Page Content */}
+                <main className="flex-1 overflow-auto p-4 lg:p-6">
+                  <Routes>
+                    <Route path="/" element={<Dashboard />} />
+                    <Route path="/categories" element={<Categories />} />
+                    <Route path="/recipe-categories" element={<RecipeCategories />} />
+                    <Route path="/menu-categories" element={<MenuCategories />} />
+                    <Route path="/units" element={<Units />} />
+                    <Route path="/ingredients" element={<Ingredients />} />
+                    <Route path="/recipes" element={<Recipes />} />
+                    <Route path="/menus" element={<Menus />} />
+                    <Route path="/bundling" element={<MenuBundling />} />
+                    <Route path="/calculator" element={<HPPCalculator />} />
+                    <Route path="/price-history" element={<PriceHistory />} />
+                    <Route path="/team" element={<TeamManagement />} />
+                    <Route path="/profile" element={<Profile />} />
+                    <Route path="/notifications" element={<Notifications />} />
+                    <Route path="/docs" element={<Documentation />} />
+                    <Route path="/organization-settings" element={<OrganizationSettings />} />
+                  </Routes>
+                </main>
+              </div>
             </div>
           </NotificationProvider>
           </OrganizationProvider>

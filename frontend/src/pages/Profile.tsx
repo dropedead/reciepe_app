@@ -341,12 +341,17 @@ const Profile = () => {
                 className="flex items-center justify-between p-4 bg-gray-50 dark:bg-dark-700/50 rounded-lg"
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-gradient-to-br from-primary-400 to-primary-600 rounded-lg flex items-center justify-center font-bold text-white">
-                    {org.name.charAt(0).toUpperCase()}
+                  <div className="w-10 h-10 bg-gradient-to-br from-primary-400 to-primary-600 rounded-lg flex items-center justify-center font-bold text-white overflow-hidden">
+                    {org.logoUrl ? (
+                      <img src={org.logoUrl} alt={org.name} className="w-full h-full object-cover" />
+                    ) : (
+                      org.name.charAt(0).toUpperCase()
+                    )}
                   </div>
                   <div>
                     <p className="font-medium text-gray-900 dark:text-white">{org.name}</p>
                     <p className="text-xs text-gray-500 dark:text-dark-400">Slug: {org.slug}</p>
+                    <p className="text-xs text-gray-400 dark:text-dark-500">Tenant ID: {org.id}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">

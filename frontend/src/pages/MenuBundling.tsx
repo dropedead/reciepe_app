@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Plus, Pencil, Trash2, Search, Package, X, Gift, Percent, Tag, DollarSign, Calculator, TrendingUp, Calendar, Clock, Check, XCircle, Sparkles, ShoppingBag, BadgePercent, Zap } from 'lucide-react';
-import Select from 'react-select';
-import { bundlingApi, menusApi } from '../api';
+import { Plus, Pencil, Trash2, Search, Package, X, Gift, Percent, Tag, DollarSign, Calculator, TrendingUp, Calendar, Clock, Check, XCircle, Sparkles, ShoppingBag, BadgePercent, Zap, Filter, ChevronRight } from 'lucide-react';
+import { bundlingApi, menusApi, menuCategoriesApi } from '../api';
 import { PageSkeleton } from '../components/Skeleton';
 import ConfirmDialog from '../components/ConfirmDialog';
 import Toast from '../components/Toast';
@@ -58,6 +57,7 @@ const PROMOTION_TYPES = [
 function MenuBundling() {
   const [bundles, setBundles] = useState<any[]>([]);
   const [menus, setMenus] = useState<any[]>([]);
+  const [menuCategories, setMenuCategories] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [showModal, setShowModal] = useState(false);
@@ -67,11 +67,18 @@ function MenuBundling() {
   const [calculation, setCalculation] = useState<any>(null);
   const [isCalculating, setIsCalculating] = useState(false);
   
+  // Menu Selector Modal states
+  const [showMenuSelectorModal, setShowMenuSelectorModal] = useState(false);
+  const [menuSelectorIndex, setMenuSelectorIndex] = useState<number | null>(null);
+  const [menuSearchTerm, setMenuSearchTerm] = useState('');
+  const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<number | null>(null);
+  
   // Toast & Confirm dialog states
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [confirmDialog, setConfirmDialog] = useState<{ show: boolean; bundleId: number | null; bundleName: string }>({ 
     show: false, bundleId: null, bundleName: '' 
   });
+  const [saveConfirmDialog, setSaveConfirmDialog] = useState(false);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -101,12 +108,14 @@ function MenuBundling() {
 
   const loadData = async () => {
     try {
-      const [bundlesRes, menusRes] = await Promise.all([
+      const [bundlesRes, menusRes, categoriesRes] = await Promise.all([
         bundlingApi.getAll(),
-        menusApi.getAll()
+        menusApi.getAll(),
+        menuCategoriesApi.getAll()
       ]);
       setBundles(bundlesRes.data);
       setMenus(menusRes.data);
+      setMenuCategories(categoriesRes.data);
     } catch (error) {
       console.error('Failed to load data:', error);
       setToast({ message: 'Gagal memuat data bundling', type: 'error' });
@@ -142,48 +151,47 @@ function MenuBundling() {
       minimumFractionDigits: 0
     }).format(value);
   };
-
-  // Custom styles for react-select
-  const selectStyles = {
-    control: (base: any, state: any) => ({
-      ...base,
-      backgroundColor: 'var(--bg-tertiary)',
-      borderColor: state.isFocused ? 'var(--primary)' : 'transparent',
-      boxShadow: state.isFocused ? '0 0 0 3px rgba(249, 115, 22, 0.12)' : 'none',
-      '&:hover': { borderColor: 'var(--primary)' },
-      borderRadius: '12px',
-      padding: '6px 4px',
-      minHeight: '48px'
-    }),
-    menu: (base: any) => ({
-      ...base,
-      backgroundColor: 'var(--bg-secondary)',
-      border: '1px solid var(--bg-tertiary)',
-      borderRadius: '12px',
-      zIndex: 9999
-    }),
-    menuList: (base: any) => ({ ...base, padding: '8px' }),
-    option: (base: any, state: any) => ({
-      ...base,
-      backgroundColor: state.isSelected ? 'var(--primary)' : state.isFocused ? 'var(--bg-tertiary)' : 'transparent',
-      color: state.isSelected ? 'white' : 'var(--text-primary)',
-      borderRadius: '8px',
-      padding: '10px 12px',
-      cursor: 'pointer'
-    }),
-    singleValue: (base: any) => ({ ...base, color: 'var(--text-primary)' }),
-    input: (base: any) => ({ ...base, color: 'var(--text-primary)' }),
-    placeholder: (base: any) => ({ ...base, color: 'var(--text-muted)' }),
-    dropdownIndicator: (base: any) => ({ ...base, color: 'var(--text-muted)' }),
-    clearIndicator: (base: any) => ({ ...base, color: 'var(--text-muted)' }),
-    noOptionsMessage: (base: any) => ({ ...base, color: 'var(--text-muted)' })
-  };
-
   const menuOptions = menus.map(menu => ({
     value: menu.id.toString(),
     label: `${menu.name} - ${formatCurrency(menu.sellingPrice)}`,
-    menu
+    menu,
+    categoryId: menu.categoryId
   }));
+
+  // Filter menus for the selector modal
+  const filteredMenusForSelector = menus.filter(menu => {
+    const matchesSearch = menu.name.toLowerCase().includes(menuSearchTerm.toLowerCase());
+    const matchesCategory = selectedCategoryFilter === null || menu.categoryId === selectedCategoryFilter;
+    return matchesSearch && matchesCategory;
+  });
+
+  // Open menu selector modal
+  const openMenuSelector = (index: number) => {
+    setMenuSelectorIndex(index);
+    setMenuSearchTerm('');
+    setSelectedCategoryFilter(null);
+    setShowMenuSelectorModal(true);
+  };
+
+  // Handle menu selection from modal
+  const handleSelectMenu = (menuId: string) => {
+    if (menuSelectorIndex !== null) {
+      handleItemChange(menuSelectorIndex, 'menuId', menuId);
+      setShowMenuSelectorModal(false);
+      setMenuSelectorIndex(null);
+    }
+  };
+
+  // Get menu name by ID
+  const getMenuNameById = (menuId: string) => {
+    const menu = menus.find(m => m.id.toString() === menuId);
+    return menu ? menu.name : '';
+  };
+
+  // Get full menu by ID
+  const getMenuById = (menuId: string) => {
+    return menus.find(m => m.id.toString() === menuId);
+  };
 
   const handleAddItem = () => {
     setFormData({
@@ -250,7 +258,8 @@ function MenuBundling() {
     setCalculation(null);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  // Show save confirmation dialog
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!formData.name.trim()) {
@@ -264,7 +273,16 @@ function MenuBundling() {
       return;
     }
 
+    // Show confirmation dialog
+    setSaveConfirmDialog(true);
+  };
+
+  // Actual save after confirmation
+  const handleSaveConfirm = async () => {
+    setSaveConfirmDialog(false);
+    
     try {
+      const validItems = formData.items.filter(item => item.menuId);
       const dataToSubmit = {
         ...formData,
         items: validItems
@@ -334,7 +352,7 @@ function MenuBundling() {
         />
       )}
 
-      {/* Confirm Dialog */}
+      {/* Confirm Dialog - Delete */}
       <ConfirmDialog
         isOpen={confirmDialog.show}
         title="Hapus Bundle"
@@ -342,6 +360,19 @@ function MenuBundling() {
         confirmText="Hapus"
         onConfirm={handleDeleteConfirm}
         onCancel={() => setConfirmDialog({ show: false, bundleId: null, bundleName: '' })}
+      />
+
+      {/* Confirm Dialog - Save/Edit */}
+      <ConfirmDialog
+        isOpen={saveConfirmDialog}
+        title={editingBundle ? "Simpan Perubahan" : "Buat Promo Baru"}
+        message={editingBundle 
+          ? `Yakin ingin menyimpan perubahan pada bundle "${formData.name}"?`
+          : `Yakin ingin membuat promo baru "${formData.name}"?`
+        }
+        confirmText={editingBundle ? "Simpan" : "Buat"}
+        onConfirm={handleSaveConfirm}
+        onCancel={() => setSaveConfirmDialog(false)}
       />
 
       {/* Page Header */}
@@ -695,7 +726,7 @@ function MenuBundling() {
 
       {/* Create/Edit Modal */}
       {showModal && (
-        <div className="modal-overlay" onClick={handleCloseModal}>
+        <div className="modal-overlay">
           <div className="modal max-w-4xl" onClick={(e) => e.stopPropagation()}>
             <form onSubmit={handleSubmit}>
               {/* Modal Header */}
@@ -882,16 +913,29 @@ function MenuBundling() {
                             }`}
                           >
                             <div className="flex gap-2">
-                              <div className="flex-1">
-                                <Select
-                                  options={menuOptions}
-                                  value={menuOptions.find(opt => opt.value === item.menuId) || null}
-                                  onChange={(option) => handleItemChange(index, 'menuId', option?.value || '')}
-                                  styles={selectStyles}
-                                  placeholder="Pilih menu..."
-                                  isClearable
-                                />
-                              </div>
+                              <button
+                                type="button"
+                                className={`flex-1 flex items-center justify-between px-4 py-3 rounded-xl border transition-all ${
+                                  item.menuId 
+                                    ? 'bg-white dark:bg-dark-700 border-primary-300 dark:border-primary-600' 
+                                    : 'bg-gray-50 dark:bg-dark-700/50 border-gray-200 dark:border-dark-600 hover:border-primary-300 dark:hover:border-primary-600'
+                                }`}
+                                onClick={() => openMenuSelector(index)}
+                              >
+                                {item.menuId ? (
+                                  <div className="flex flex-col items-start">
+                                    <span className="text-gray-900 dark:text-white font-medium">
+                                      {getMenuNameById(item.menuId)}
+                                    </span>
+                                    <span className="text-xs text-primary-600 dark:text-primary-400">
+                                      {formatCurrency(getMenuById(item.menuId)?.sellingPrice || 0)}
+                                    </span>
+                                  </div>
+                                ) : (
+                                  <span className="text-gray-400 dark:text-dark-400">Pilih menu...</span>
+                                )}
+                                <ChevronRight size={18} className="text-gray-400" />
+                              </button>
                               <input
                                 type="number"
                                 className="input w-20"
@@ -1017,6 +1061,135 @@ function MenuBundling() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Menu Selector Modal */}
+      {showMenuSelectorModal && (
+        <div className="modal-overlay" onClick={() => setShowMenuSelectorModal(false)}>
+          <div className="modal max-w-3xl" onClick={(e) => e.stopPropagation()}>
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-dark-700">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                <ShoppingBag size={20} className="text-primary-500" />
+                Pilih Menu
+              </h3>
+              <button
+                type="button"
+                className="w-8 h-8 rounded-full bg-gray-100 dark:bg-dark-700 hover:bg-gray-200 dark:hover:bg-dark-600 flex items-center justify-center text-gray-500 dark:text-dark-400 transition-colors"
+                onClick={() => setShowMenuSelectorModal(false)}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Filters */}
+            <div className="p-4 border-b border-gray-200 dark:border-dark-700 space-y-4">
+              {/* Search */}
+              <div className="relative">
+                <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-dark-400" />
+                <input
+                  type="text"
+                  className="input pl-10"
+                  placeholder="Cari menu..."
+                  value={menuSearchTerm}
+                  onChange={(e) => setMenuSearchTerm(e.target.value)}
+                />
+              </div>
+
+              {/* Category Filter */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                  <Filter size={14} />
+                  Filter Kategori
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
+                      selectedCategoryFilter === null
+                        ? 'bg-primary-500 text-white'
+                        : 'bg-gray-100 dark:bg-dark-700 text-gray-600 dark:text-dark-400 hover:bg-gray-200 dark:hover:bg-dark-600'
+                    }`}
+                    onClick={() => setSelectedCategoryFilter(null)}
+                  >
+                    Semua
+                  </button>
+                  {menuCategories.map((category) => (
+                    <button
+                      key={category.id}
+                      type="button"
+                      className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
+                        selectedCategoryFilter === category.id
+                          ? 'bg-primary-500 text-white'
+                          : 'bg-gray-100 dark:bg-dark-700 text-gray-600 dark:text-dark-400 hover:bg-gray-200 dark:hover:bg-dark-600'
+                      }`}
+                      onClick={() => setSelectedCategoryFilter(category.id)}
+                    >
+                      {category.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Menu Grid */}
+            <div className="p-4 max-h-[50vh] overflow-y-auto">
+              {filteredMenusForSelector.length === 0 ? (
+                <div className="text-center py-8">
+                  <ShoppingBag size={48} className="mx-auto text-gray-300 dark:text-dark-600 mb-4" />
+                  <p className="text-gray-500 dark:text-dark-400">Tidak ada menu ditemukan</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {filteredMenusForSelector.map((menu) => {
+                    const category = menuCategories.find(c => c.id === menu.categoryId);
+                    const isSelected = menuSelectorIndex !== null && formData.items[menuSelectorIndex]?.menuId === menu.id.toString();
+                    
+                    return (
+                      <button
+                        key={menu.id}
+                        type="button"
+                        className={`p-4 rounded-xl border-2 text-left transition-all hover:shadow-md ${
+                          isSelected
+                            ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
+                            : 'border-gray-200 dark:border-dark-600 hover:border-primary-300 dark:hover:border-primary-700 bg-white dark:bg-dark-700'
+                        }`}
+                        onClick={() => handleSelectMenu(menu.id.toString())}
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex-1 min-w-0">
+                            <h4 className={`font-semibold truncate ${isSelected ? 'text-primary-600 dark:text-primary-400' : 'text-gray-900 dark:text-white'}`}>
+                              {menu.name}
+                            </h4>
+                            {category && (
+                              <span className="inline-block mt-1 px-2 py-0.5 bg-gray-100 dark:bg-dark-600 text-gray-600 dark:text-dark-400 text-xs rounded-full">
+                                {category.name}
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-right shrink-0">
+                            <p className="font-bold text-primary-600 dark:text-primary-400">
+                              {formatCurrency(menu.sellingPrice)}
+                            </p>
+                            <p className="text-xs text-gray-500 dark:text-dark-400">
+                              HPP: {formatCurrency(menu.hpp || 0)}
+                            </p>
+                          </div>
+                        </div>
+                        {isSelected && (
+                          <div className="mt-2 flex items-center gap-1 text-sm text-primary-600 dark:text-primary-400">
+                            <Check size={14} />
+                            <span>Terpilih</span>
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}

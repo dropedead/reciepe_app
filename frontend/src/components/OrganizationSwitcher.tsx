@@ -58,8 +58,12 @@ const OrganizationSwitcher = ({ collapsed = false, variant = 'default' }: Organi
                     {/* Small Avatar */}
                     <div className="w-6 h-6 bg-gradient-to-br from-primary-400 to-primary-600 
                                     rounded-md flex items-center justify-center font-bold text-white 
-                                    text-xs flex-shrink-0">
-                        {currentOrganization.name.charAt(0).toUpperCase()}
+                                    text-xs flex-shrink-0 overflow-hidden">
+                        {currentOrganization.logoUrl ? (
+                            <img src={currentOrganization.logoUrl} alt={currentOrganization.name} className="w-full h-full object-cover" />
+                        ) : (
+                            currentOrganization.name.charAt(0).toUpperCase()
+                        )}
                     </div>
                     
                     {/* Name - truncated */}
@@ -97,15 +101,18 @@ const OrganizationSwitcher = ({ collapsed = false, variant = 'default' }: Organi
                                     `}
                                     onClick={() => handleSelect(org)}
                                 >
-                                    {/* Avatar */}
                                     <div className={`
                                         w-8 h-8 rounded-lg flex items-center justify-center 
-                                        font-semibold text-sm flex-shrink-0
+                                        font-semibold text-sm flex-shrink-0 overflow-hidden
                                         ${org.id === currentOrganization.id 
                                             ? 'bg-gradient-to-br from-primary-400 to-primary-600 text-white' 
                                             : 'bg-gray-200 dark:bg-dark-600 text-gray-600 dark:text-dark-300'}
                                     `}>
-                                        {org.name.charAt(0).toUpperCase()}
+                                        {org.logoUrl ? (
+                                            <img src={org.logoUrl} alt={org.name} className="w-full h-full object-cover" />
+                                        ) : (
+                                            org.name.charAt(0).toUpperCase()
+                                        )}
                                     </div>
                                     
                                     {/* Info */}
@@ -153,8 +160,12 @@ const OrganizationSwitcher = ({ collapsed = false, variant = 'default' }: Organi
                 {/* Avatar */}
                 <div className="w-9 h-9 bg-gradient-to-br from-primary-400 to-primary-600 
                                 rounded-lg flex items-center justify-center font-bold text-white 
-                                text-sm flex-shrink-0 shadow-glow">
-                    {currentOrganization.name.charAt(0).toUpperCase()}
+                                text-sm flex-shrink-0 shadow-glow overflow-hidden">
+                    {currentOrganization.logoUrl ? (
+                        <img src={currentOrganization.logoUrl} alt={currentOrganization.name} className="w-full h-full object-cover" />
+                    ) : (
+                        currentOrganization.name.charAt(0).toUpperCase()
+                    )}
                 </div>
                 
                 {/* Info */}
@@ -207,12 +218,16 @@ const OrganizationSwitcher = ({ collapsed = false, variant = 'default' }: Organi
                                 {/* Avatar */}
                                 <div className={`
                                     w-8 h-8 rounded-lg flex items-center justify-center 
-                                    font-semibold text-sm flex-shrink-0
+                                    font-semibold text-sm flex-shrink-0 overflow-hidden
                                     ${org.id === currentOrganization.id 
                                         ? 'bg-gradient-to-br from-primary-400 to-primary-600 text-white' 
                                         : 'bg-gray-200 dark:bg-dark-600 text-gray-600 dark:text-dark-300'}
                                 `}>
-                                    {org.name.charAt(0).toUpperCase()}
+                                    {org.logoUrl ? (
+                                        <img src={org.logoUrl} alt={org.name} className="w-full h-full object-cover" />
+                                    ) : (
+                                        org.name.charAt(0).toUpperCase()
+                                    )}
                                 </div>
                                 
                                 {/* Info */}

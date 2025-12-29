@@ -49,7 +49,7 @@ const ConfirmDialog = ({
     const colors = getColors();
 
     return (
-        <div className="modal-overlay" onClick={onCancel}>
+        <div className="modal-overlay z-[60]" onClick={onCancel}>
             <div className="modal max-w-md animate-fade-in" onClick={e => e.stopPropagation()}>
                 <div className="p-6">
                     {/* Icon */}

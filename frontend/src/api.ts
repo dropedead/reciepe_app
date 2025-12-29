@@ -62,7 +62,7 @@ export const organizationsApi = {
     getById: (id: number): Promise<AxiosResponse> => api.get(`/organizations/${id}`),
     create: (data: { name: string; slug?: string; description?: string }): Promise<AxiosResponse> =>
         api.post('/organizations', data),
-    update: (id: number, data: { name?: string; description?: string }): Promise<AxiosResponse> =>
+    update: (id: number, data: { name?: string; description?: string; logoUrl?: string }): Promise<AxiosResponse> =>
         api.put(`/organizations/${id}`, data),
     delete: (id: number): Promise<AxiosResponse> => api.delete(`/organizations/${id}`),
     setDefault: (id: number): Promise<AxiosResponse> => api.post(`/organizations/${id}/default`),
