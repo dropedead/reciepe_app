@@ -1,9 +1,9 @@
+/* Google Font - must be first */
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap");
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-/* Google Font */
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap");
 
 /* Base Styles */
 :root {
@@ -299,7 +299,7 @@ body {
   }
 
   .page-header::after {
-    content: '';
+    content: "";
     @apply absolute bottom-0 left-0 right-0 h-4 pointer-events-none;
     background: linear-gradient(to bottom, var(--bg-secondary), transparent);
   }
@@ -642,7 +642,8 @@ body {
 }
 
 @keyframes pulse {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
   }
   50% {
