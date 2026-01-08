@@ -92,6 +92,16 @@ body {
   background: #64748b;
 }
 
+/* Scrollbar hide utility */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
 /* Component Classes */
 @layer components {
   .btn {
