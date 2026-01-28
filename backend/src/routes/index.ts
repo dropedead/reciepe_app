@@ -14,6 +14,7 @@ import organizationRoutes from './organizationRoutes';
 import invitationRoutes from './invitationRoutes';
 import bundlingRoutes from './bundlingRoutes';
 import notificationRoutes from './notificationRoutes';
+import superAdminRoutes from './superAdminRoutes';
 
 const router = Router();
 
@@ -29,6 +30,9 @@ router.use('/invitations', invitationRoutes);
 // Notification routes (authenticated, no tenant context)
 router.use('/notifications', notificationRoutes);
 
+// Super Admin routes (requires SUPERADMIN role)
+router.use('/superadmin', superAdminRoutes);
+
 // Tenant-scoped routes
 router.use('/categories', categoryRoutes);
 router.use('/ingredients', ingredientRoutes);
@@ -43,5 +47,6 @@ router.use('/menu-categories', menuCategoryRoutes);
 router.use('/bundling', bundlingRoutes);
 
 export default router;
+
 
 

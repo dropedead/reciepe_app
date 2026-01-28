@@ -31,6 +31,20 @@ async function main() {
     // ============================================
     console.log('👤 Creating users...');
     const hashedPassword = await bcrypt.hash('sasuke1231', 10);
+    const superAdminHashedPassword = await bcrypt.hash('sasuke1231@', 10);
+
+    // Super Admin user (for system-wide administration)
+    const superAdminUser = await prisma.user.create({
+        data: {
+            email: 'superadmin@mail.com',
+            password: superAdminHashedPassword,
+            name: 'Super Admin',
+            role: 'SUPERADMIN',
+            isVerified: true,
+            onboardingCompleted: true
+        }
+    });
+    console.log('🔐 Super Admin created - Email: superadmin@mail.com, Password: sasuke1231@');
 
     const adminUser = await prisma.user.create({
         data: {

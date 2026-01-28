@@ -1,7 +1,8 @@
 import { Link } from 'react-router-dom';
 import { 
   ChefHat, Calculator, UtensilsCrossed, TrendingUp, Users, BarChart3,
-  ArrowRight, CheckCircle2, Sparkles, Shield, Zap, Star
+  ArrowRight, CheckCircle2, Sparkles, Shield, Zap, Star, Headphones,
+  Wrench, RefreshCw, Lightbulb, Mail
 } from 'lucide-react';
 
 const LandingPage = () => {
@@ -80,6 +81,12 @@ const LandingPage = () => {
 
             {/* CTA Buttons */}
             <div className="flex items-center gap-3">
+              <Link 
+                to="/support" 
+                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
+              >
+                Support
+              </Link>
               <Link 
                 to="/login" 
                 className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
@@ -238,6 +245,104 @@ const LandingPage = () => {
         </div>
       </section>
 
+      {/* Support Section */}
+      <section className="py-20 lg:py-32 bg-white dark:bg-dark-800/50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Section Header */}
+          <div className="text-center max-w-3xl mx-auto mb-16">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-purple-500/10 border border-purple-500/20 rounded-full text-purple-600 dark:text-purple-400 text-sm font-medium mb-6">
+              <Headphones className="w-4 h-4" />
+              Pusat Bantuan
+            </div>
+            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white mb-4">
+              Butuh Bantuan?
+            </h2>
+            <p className="text-lg text-gray-600 dark:text-gray-400">
+              Tim kami siap membantu Anda dengan berbagai kebutuhan
+            </p>
+          </div>
+
+          {/* Support Cards */}
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {/* Technical Support */}
+            <Link 
+              to="/support"
+              className="group p-6 bg-gray-50 dark:bg-dark-800 rounded-2xl border border-gray-100 dark:border-dark-700 hover:border-red-500/30 dark:hover:border-red-500/30 transition-all hover:shadow-xl hover:-translate-y-1"
+            >
+              <div className="w-14 h-14 bg-gradient-to-br from-red-500 to-orange-500 rounded-xl flex items-center justify-center text-white mb-5 shadow-lg group-hover:scale-110 transition-transform">
+                <Wrench className="w-7 h-7" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
+                Support Technical
+              </h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Laporkan masalah teknis atau bug
+              </p>
+            </Link>
+
+            {/* Update Request */}
+            <Link 
+              to="/support"
+              className="group p-6 bg-gray-50 dark:bg-dark-800 rounded-2xl border border-gray-100 dark:border-dark-700 hover:border-blue-500/30 dark:hover:border-blue-500/30 transition-all hover:shadow-xl hover:-translate-y-1"
+            >
+              <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center text-white mb-5 shadow-lg group-hover:scale-110 transition-transform">
+                <RefreshCw className="w-7 h-7" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
+                Permintaan Update
+              </h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Ajukan permintaan fitur baru
+              </p>
+            </Link>
+
+            {/* Suggestions */}
+            <Link 
+              to="/support"
+              className="group p-6 bg-gray-50 dark:bg-dark-800 rounded-2xl border border-gray-100 dark:border-dark-700 hover:border-amber-500/30 dark:hover:border-amber-500/30 transition-all hover:shadow-xl hover:-translate-y-1"
+            >
+              <div className="w-14 h-14 bg-gradient-to-br from-amber-500 to-yellow-500 rounded-xl flex items-center justify-center text-white mb-5 shadow-lg group-hover:scale-110 transition-transform">
+                <Lightbulb className="w-7 h-7" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
+                Saran Aplikasi
+              </h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Berikan saran dan ide Anda
+              </p>
+            </Link>
+
+            {/* Contact Developer */}
+            <Link 
+              to="/support"
+              className="group p-6 bg-gray-50 dark:bg-dark-800 rounded-2xl border border-gray-100 dark:border-dark-700 hover:border-purple-500/30 dark:hover:border-purple-500/30 transition-all hover:shadow-xl hover:-translate-y-1"
+            >
+              <div className="w-14 h-14 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center text-white mb-5 shadow-lg group-hover:scale-110 transition-transform">
+                <Mail className="w-7 h-7" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
+                Kontak IT Developer
+              </h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Hubungi tim developer
+              </p>
+            </Link>
+          </div>
+
+          {/* CTA Button */}
+          <div className="text-center mt-12">
+            <Link 
+              to="/support" 
+              className="inline-flex items-center gap-2 px-8 py-4 text-lg font-semibold text-white bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl hover:from-purple-600 hover:to-pink-600 shadow-lg shadow-purple-500/25 transition-all hover:shadow-xl hover:-translate-y-1"
+            >
+              <Headphones className="w-5 h-5" />
+              Kunjungi Pusat Bantuan
+              <ArrowRight className="w-5 h-5" />
+            </Link>
+          </div>
+        </div>
+      </section>
+
       {/* CTA Section */}
       <section className="py-20 lg:py-32 bg-gradient-to-br from-primary-500 to-primary-600 relative overflow-hidden">
         {/* Background Pattern */}
@@ -295,6 +400,7 @@ const LandingPage = () => {
 
             {/* Links */}
             <div className="flex items-center gap-6 text-gray-400">
+              <Link to="/support" className="hover:text-white transition-colors">Support</Link>
               <Link to="/login" className="hover:text-white transition-colors">Login</Link>
               <Link to="/register" className="hover:text-white transition-colors">Register</Link>
             </div>

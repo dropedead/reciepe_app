@@ -150,11 +150,22 @@ export const login = async (input: LoginInput): Promise<AuthResult> => {
         throw new Error('Email atau password salah');
     }
 
+    // Check if user has a password (for local auth)
+    if (!user.password) {
+        throw new Error('Email atau password salah');
+    }
+
     // Check password
     const isMatch = await comparePassword(password, user.password);
     if (!isMatch) {
         throw new Error('Email atau password salah');
     }
+
+    // Update last login time
+    await prisma.user.update({
+        where: { id: user.id },
+        data: { lastLoginAt: new Date() }
+    });
 
     // Get user's default organization
     const defaultMembership = await prisma.organizationMember.findFirst({

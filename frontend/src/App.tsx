@@ -2,7 +2,7 @@ import { useState, useEffect, FC, useRef } from 'react';
 import { BrowserRouter, Routes, Route, NavLink, useLocation, Navigate, Link, useNavigate } from 'react-router-dom';
 import { 
   LayoutDashboard, ChefHat, Package, Calculator, Tags, UtensilsCrossed, 
-  Menu, X, ChevronDown, Database, TrendingUp, Scale, LogOut, User, Users, Sun, Moon, Gift, Sparkles, Bell, Book, Settings 
+  Menu, X, ChevronDown, Database, TrendingUp, Scale, LogOut, User, Users, Sun, Moon, Gift, Sparkles, Bell, Book, Settings, Headphones 
 } from 'lucide-react';
 import Dashboard from './pages/Dashboard';
 import Ingredients from './pages/Ingredients';
@@ -18,6 +18,8 @@ import TeamManagement from './pages/TeamManagement';
 import Profile from './pages/Profile';
 import MenuBundling from './pages/MenuBundling';
 import LandingPage from './pages/LandingPage';
+import Support from './pages/Support';
+import SuperAdminDashboard from './pages/SuperAdminDashboard';
 import Onboarding from './pages/Onboarding';
 import Notifications from './pages/Notifications';
 import Documentation from './pages/Documentation';
@@ -278,7 +280,7 @@ const MobileSidebarContent: FC<{ closeSidebar: () => void }> = ({ closeSidebar }
         title="Lainnya"
         icon={<Users size={20} />} 
         defaultOpen={false}
-        childPaths={['/team', '/organization-settings', '/notifications', '/docs']}
+        childPaths={['/team', '/organization-settings', '/notifications', '/docs', '/support']}
       >
         <SidebarLink to="/team" icon={<Users size={18} />} onClick={closeSidebar} isChild>
           {t.nav.team}
@@ -291,6 +293,9 @@ const MobileSidebarContent: FC<{ closeSidebar: () => void }> = ({ closeSidebar }
         </SidebarLink>
         <SidebarLink to="/docs" icon={<Book size={18} />} onClick={closeSidebar} isChild>
           Panduan
+        </SidebarLink>
+        <SidebarLink to="/support" icon={<Headphones size={18} />} onClick={closeSidebar} isChild>
+          Help & Support
         </SidebarLink>
       </NavGroup>
     </nav>
@@ -511,6 +516,16 @@ const AppRoutes: FC<{
           ? (needsOnboarding ? <Navigate to="/onboarding" replace /> : <Navigate to="/" replace />)
           : <LandingPage />
       } />
+
+      {/* Support page - Public route */}
+      <Route path="/support" element={<Support />} />
+
+      {/* Super Admin Dashboard - Requires SUPERADMIN role */}
+      <Route path="/superadmin" element={
+        isAuthenticated 
+          ? <SuperAdminDashboard />
+          : <Navigate to="/login" replace />
+      } />
       
       {/* Auth routes */}
       <Route path="/login" element={
@@ -724,6 +739,10 @@ const AppRoutes: FC<{
                     <NavLink to="/docs" className={({ isActive }) => `flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${isActive ? 'bg-primary-500/10 text-primary-500' : 'text-gray-600 dark:text-dark-400 hover:bg-gray-100 dark:hover:bg-dark-700/50'}`}>
                       <Book size={18} />
                       <span>Panduan</span>
+                    </NavLink>
+                    <NavLink to="/support" className={({ isActive }) => `flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${isActive ? 'bg-primary-500/10 text-primary-500' : 'text-gray-600 dark:text-dark-400 hover:bg-gray-100 dark:hover:bg-dark-700/50'}`}>
+                      <Headphones size={18} />
+                      <span>Help & Support</span>
                     </NavLink>
                   </div>
                 </nav>
